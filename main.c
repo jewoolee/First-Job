@@ -89,8 +89,6 @@ unsigned int g_TimerCounter =0;
 unsigned short g_DataBuffer[6]={0,};  // 16비트만 저장
 unsigned short g_TempBuffer[6]={0,};    // 16비트만 저장
 
-unsigned char  Socket;
-
 int g_Sw[7]={0};
 
 int g_SwSum =0;
