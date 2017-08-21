@@ -1,12 +1,12 @@
-/* 
+/*
 * File:   main.c
 * Author: lee
 *
 * Created on 2017년 6월 22일 (목), 오전 8:51
 */
 
-#include <p33FJ128GP310A.h> 
-
+#include <p33FJ128GP310A.h>
+#include "lib/w5300.h"
 #include <libpic30.h>
 #include <string.h>
 #include <math.h>
@@ -42,18 +42,23 @@ unsigned int ReadADC7980(void);
 void ADCValueCheck(int ChannelCount);
 void ReadADCValue(unsigned int AverageCount);
 void AlramPrint();
-
-
+void UdpSetting();
+void SendData(unsigned int Name);
+ unsigned char     socket(  unsigned char  protocol,  unsigned short port,  unsigned short mode);
+void     close();
+unsigned long   sendto( unsigned char  * buf, unsigned long len,  unsigned char  * addr,  unsigned short port);
+unsigned long   recvfrom( unsigned char  * buf, unsigned long len,  unsigned char  * addr,  unsigned short  *port);
+void     loopback_udp(  unsigned short port,   unsigned short mode);
 // 인터럽트 선언 부************************************************
 void __attribute__((interrupt, auto_psv)) _U1RXInterrupt(void);
 void __attribute__((interrupt, auto_psv)) _T1Interrupt(void);
 void __attribute__((interrupt, auto_psv)) _T2Interrupt(void);
+
 //****************************************************************
 // <editor-fold defaultstate="collapsed" desc="열거형선언">
 enum { MODE_SEL, VOLT_ERR}; // 2 모드 화면, 에러 화면
 enum { CHK_OK, CHK_NO, CHK_RESULT, CHK_HINT, CHK_HINT_1, CHK_LAN, CHK_VOLT, CHK_BIT}; // 7
 enum { NONE, SELF, LINE, FIRE1, FIRE2 };
-//enum { SELF_RES_RESULT, SELF_SHO_RESULT, SELF_INS_RESULT, LINE_RES_RESULT, LINE_SHO_RESULT, LINE_INS_RESULT } ;
 enum { SELF_TEST, SELF_RES_TEST, SELF_SHO_TEST, SELF_INS_TEST}; // 5
 enum { SELF_RES_ING, SELF_SHO_ING, SELF_INS_ING, SELF_RES_RESULT, SELF_SHO_RESULT, SELF_INS_RESULT}; // 6
 enum { LINE_RES_ING, LINE_SHO_ING, LINE_INS_ING, LINE_RES_RESULT, LINE_SHO_RESULT, LINE_INS_RESULT}; // 6
@@ -81,14 +86,24 @@ unsigned int g_TimerCount=0;
 unsigned int g_OkButtonTimerCount =0;
 unsigned int g_OkButtonTimerCountPre =0;
 unsigned int g_TimerCounter =0;
+unsigned short g_DataBuffer[6]={0,};  // 16비트만 저장
+unsigned short g_TempBuffer[6]={0,};    // 16비트만 저장
+
+unsigned char  Socket;
+
 int g_Sw[7]={0};
-int d_Sw[5]={0};
+
 int g_SwSum =0;
-
-
 int g_MenuPage;
-int b=0;
+
+ unsigned short   iinchip_source_port;
+ unsigned char     check_sendok_flag[8];
 const float g_Error[3] = { 0.05f,  0.4f, 1.5f};//const float g_Error[4] = { 0.05f, 0.2f, 0.4f, 1.5f};
+ // <editor-fold defaultstate="collapsed" desc="구조체 모음">
+ struct LOADER_STATUS{
+	long	terminalSpeed;
+	long	downloadSpeed;
+} status;
 struct ECTSSTATUS EctsStatus;
 struct BUTTONVALUE{
 	unsigned int s_OkButton;          // 확인
@@ -113,6 +128,66 @@ struct PAGEVALUE{
 	unsigned char s_FireRecvResult_2[9];
 	unsigned char s_FireDetailResult_2[9];
 } PageValue;
+struct CONNECTCHECK{
+    unsigned int s_Opcode;
+    unsigned int s_Repeat;
+    unsigned int s_SeqNo;
+    unsigned int s_DataSize;
+    
+    unsigned int s_LchrId;
+    unsigned int s_McuId;
+}ConnectCheck;
+
+struct CONNECTCHECKACK{
+    unsigned int s_Opcode;
+    unsigned int s_Repeat;
+    unsigned int s_SeqNo;
+    unsigned int s_DataSize;
+    
+    unsigned int s_LchrId;
+    unsigned int s_McuId;
+}ConnectCheckAck;
+
+struct FIRETESTCHECK{
+    unsigned int s_Opcode;
+    unsigned int s_Repeat;
+    unsigned int s_SeqNo;
+    unsigned int s_DataSize;
+    
+    unsigned int s_LchrId;
+    unsigned int s_McuId;
+    unsigned int s_Time;
+    unsigned int s_MSLPWR;
+    unsigned int s_EXTPWR;
+    unsigned int s_EBSQUIB;
+    unsigned int s_BATSQUIB;
+    unsigned int s_ABARSQUIB;
+    unsigned int s_BDUSQUIB;
+    unsigned int s_ARMING;
+    unsigned int s_INTARM;
+    unsigned int s_INTSQUIB;
+}FireTestCheck;
+
+struct FIRETESTCHECKRESULT{
+    unsigned int s_Opcode;
+    unsigned int s_Repeat;
+    unsigned int s_SeqNo;
+    unsigned int s_DataSize;
+    
+    unsigned int s_LchrId;
+    unsigned int s_McuId;
+    unsigned int s_MSLPWR;
+    unsigned int s_EXTPWR;
+    unsigned int s_EBSQUIB;
+    unsigned int s_BATSQUIB;
+    unsigned int s_ABATSQUIB;
+    unsigned int s_BDUSQUIB;
+    unsigned int s_ARMING;
+    unsigned int s_INTARM;
+    unsigned int s_INTSQUIB;
+}FireTestCheckResult;
+
+  // </editor-fold>
 //***************************************
 void __attribute__((interrupt, auto_psv)) _U1RXInterrupt(void)
 {
@@ -126,28 +201,28 @@ void __attribute__((interrupt, auto_psv)) _U1RXInterrupt(void)
 
 	if (U1STAbits.OERR == 1) // 수신 패킷이 꽉차면 초기화 하는 부분
 	{
-		U1STAbits.OERR = 0;	
+		U1STAbits.OERR = 0;
 		for(i=0; i<100; i++)
-		{	
+		{
 			g_RxBuffer[i] = 0x00;
 		}
 	}
 }
 void __attribute__((interrupt, auto_psv)) _T1Interrupt(void)
-{	
+{
 	IFS0bits.T1IF = 0; // 인터럽트 타이머 플래그 초기화
-	g_TimerCount++; 
+	g_TimerCount++;
 	if(g_TimerCount==2) {
 		RelayControl(); // 200ms 마다 동작
 	}
 	if(g_TimerCount==6) g_TimerCount=0; // 600ms 지나면 카운터 초기화
 }
 void __attribute__((interrupt, auto_psv)) _T2Interrupt(void)
-{	
+{
 	IFS0bits.T2IF = 0;  //  인터럽트 타이머 플래그 초기화
-        
+
 	g_TimerCounter++;
-    
+
     if(PORTEbits.RE3 == 0)
     {
         g_OkButtonTimerCount = g_TimerCounter ;     // 눌렀을때
@@ -162,29 +237,29 @@ void __attribute__((interrupt, auto_psv)) _T2Interrupt(void)
          if(PageValue.s_SelfResult[SELF_RES_RESULT] == 1)   ResidualVoltTestResultDebug();
         else if(PageValue.s_SelfResult[SELF_SHO_RESULT] == 1)   ShortTestResultDebug();
              else if(PageValue.s_SelfResult[SELF_INS_RESULT] == 1)   InsulationTestResultDebug();
-        
+
     }
 //            printf("R 140,100,200,200,255,255,255,1\r");
-//        	printf("f 누름 : %d,140,100\r",g_OkButtonTimerCount);   
+//        	printf("f 누름 : %d,140,100\r",g_OkButtonTimerCount);
 //            printf("R 140,200,200,200,255,255,255,1\r");
 //            printf("f 안누름 : %d,140,200\r",g_OkButtonTimerCountPre);
 
-	
+
 }
 void __attribute__ ((interrupt, no_auto_psv)) _INT1Interrupt(void)
 {
 	if(PORTEbits.RE0 == 0) g_InputValue += 1;
 	if(PORTEbits.RE1 == 0) g_InputValue = 2;
 	if(PORTEbits.RE2 == 0) g_InputValue = 3;
-	if((PORTEbits.RE3 == 0) && (g_InputValue >0)) 
+	if((PORTEbits.RE3 == 0) && (g_InputValue >0))
 	{
 		ButtonValue.s_OkButton = 1;
         g_SwSum = g_InputValue;
 	}
 	ButtonValue.s_NextButton == 0 ? printf("R 80,240,104,264,255,255,255,1\r"):NULL;    // 세부 점검 결과 화면에서 숫자 버튼 못쓰도록
-	if((g_InputValue != 0) && (ButtonValue.s_NextButton == 0)) 
+	if((g_InputValue != 0) && (ButtonValue.s_NextButton == 0))
 	{
-		printf("f %d,80,240\r",g_InputValue);           
+		printf("f %d,80,240\r",g_InputValue);
 	}
 
 	IFS1bits.INT1IF = 0;		// INT1 Interrupt Flag Clear;
@@ -192,14 +267,14 @@ void __attribute__ ((interrupt, no_auto_psv)) _INT1Interrupt(void)
 }
 void __attribute__ ((interrupt, no_auto_psv)) _INT2Interrupt(void)
 {
-    
-	if(PORTEbits.RE4 == 0) 
+
+	if(PORTEbits.RE4 == 0)
 	{
 		ButtonValue.s_BackButton = (PORTEbits.RE4 == 0) ? 1 : 0;
         g_InputValue = 0;
 		//printf("R 200,200,200,264,255,255,255,1\r");
-		printf("f int플래그 %d,999,999\r", ButtonValue.s_BackButton);   
-		printf("f int포트 %d,999,999\r", PORTEbits.RE4);   
+		printf("f int플래그 %d,999,999\r", ButtonValue.s_BackButton);
+		printf("f int포트 %d,999,999\r", PORTEbits.RE4);
 	}
 	if((PORTEbits.RE5 == 0) && (g_InputValue >0))
 	{
@@ -299,7 +374,7 @@ void ButtonPrintValue(void) // 버튼입력값 화면 출력 SCI 연동
 	}
 	}
 	}
-	else 
+	else
 	{
 	if((PageValue.s_Fire[FIRE_TEST_EACH_1]==1) || (PageValue.s_Fire[FIRE_TEST_EACH_2]==1) || (PageValue.s_Fire[FIRE_TEST_TOTAL_1]==1) || (PageValue.s_Fire[FIRE_TEST_TOTAL_2]==1))
 	{
@@ -333,7 +408,7 @@ void ButtonPrintValue(void) // 버튼입력값 화면 출력 SCI 연동
 	else if((PageValue.s_Self[SELF_TEST]==1) || (PageValue.s_Line[LINE_TEST]==1) || (PageValue.s_Fire[FIRE_TEST] ==1 ) )
 	{
 	if(g_RxData < 0x05)
-	{  
+	{
 	if((PageValue.s_Etc[RES_ING]==1) || (PageValue.s_Etc[SHO_ING]==1) || (PageValue.s_Etc[INS_ING]==1) ||
 	(PageValue.s_Etc[RES_RESULT]==1) || (PageValue.s_Etc[SHO_RESULT]==1) || (PageValue.s_Etc[INS_RESULT]==1))
 	{
@@ -346,14 +421,14 @@ void ButtonPrintValue(void) // 버튼입력값 화면 출력 SCI 연동
 	}
 	}
 	else if(PageValue.s_Fire[FIRE_TEST_EACH_1]==1 || //발사계통점검 메뉴 선택시
-	PageValue.s_Fire[FIRE_TEST_EACH_2]==1 || 
-	PageValue.s_Fire[FIRE_TEST_TOTAL_1]==1 || 
+	PageValue.s_Fire[FIRE_TEST_EACH_2]==1 ||
+	PageValue.s_Fire[FIRE_TEST_TOTAL_1]==1 ||
 	PageValue.s_Fire[FIRE_TEST_TOTAL_2]== 1)
 	{
 	if(g_RxData < 0x10)
 	{
 	if((PageValue.s_FireDetailResult_1[MSL_RESULT]==1) || (PageValue.s_FireDetailResult_1[EXT_RESULT]==1) || (PageValue.s_FireDetailResult_1[EB_RESULT]==1) || (PageValue.s_FireDetailResult_1[BAT_RESULT]==1)
-	|| (PageValue.s_FireDetailResult_1[ABAT_RESULT]==1) || (PageValue.s_FireDetailResult_1[BDU_RESULT]==1) || (PageValue.s_FireDetailResult_1[ARMING_RESULT]==1) || (PageValue.s_FireDetailResult_1[INTARM_RESULT]==1) 
+	|| (PageValue.s_FireDetailResult_1[ABAT_RESULT]==1) || (PageValue.s_FireDetailResult_1[BDU_RESULT]==1) || (PageValue.s_FireDetailResult_1[ARMING_RESULT]==1) || (PageValue.s_FireDetailResult_1[INTARM_RESULT]==1)
 	|| (PageValue.s_FireDetailResult_1[INT_RESULT]==1))
 	{
 
@@ -376,7 +451,7 @@ void InnerVoltTest(void)      // 내부 전원 점검 (완료 vref. 5v, +15v, -15v 정상�
 	unsigned int *pADC_buf16;
 	printf("R 0,0,480,272,255,255,255,1\r"); // 화면 초기화
 	printf("i TESTING/InnerVoltTesting.png,0,0\r");  // 내부 전압 점검중 화면 출력
-	// 내부 전압 점검 
+	// 내부 전압 점검
 	while(1)
 	{
 		if(AD1CON1bits.DONE == 1) // adc 변환이 끝났다.
@@ -385,7 +460,7 @@ void InnerVoltTest(void)      // 내부 전원 점검 (완료 vref. 5v, +15v, -15v 정상�
 		}
 		else // adc 변환이 안끝났을경우
 		{
-			pADC_buf16 = &ADCBUF0;	//ADCBUF0 = 0x0300 ~ 0x0309 
+			pADC_buf16 = &ADCBUF0;	//ADCBUF0 = 0x0300 ~ 0x0309
 			for(n=0; n<5; n++)
 			{
 				g_AdcBuffer[n] = *pADC_buf16++;
@@ -470,9 +545,14 @@ void InnerVoltTest(void)      // 내부 전원 점검 (완료 vref. 5v, +15v, -15v 정상�
 		PageValue.s_Check[CHK_VOLT] = 1;            // 내부 전압 정상 알람 토글
 		if(PORTEbits.RE6 == 0)// 자체 점검 플러그 인식 확인(자체점검플러그 미 연결시 =1, 자체점검플러그 연결시 = 0)
 		{
-			printf("i ETC/BitCheck.png,325,0\r");       
+			printf("i ETC/BitCheck.png,325,0\r");
 			PageValue.s_Check[CHK_BIT] = 1;             // 자체 점검 가능 알람 토글
+            
+             //통신점검 메시지 날리는 함수 
+            SendData(0); // 통신점검 메시지 g_DataBuffer 설정
+             loopback_udp(3000,&g_DataBuffer,0); // 랜 연결확인
 		}
+        
 	}
 	else           // 내부 전압 비정상시
 	{
@@ -522,7 +602,7 @@ void TestResultCheck(unsigned int Label)
 		if(n>0) printf("i ETC/Hint.png,0,205\r");     // 힌트 출력
 		break;
 	case 3:
-       
+
 		AlramPrint();
 		if(PageValue.s_FireRecvResult_1[MSL_RESULT]==1)   { printf("i ETC/Check.png,197,73\r"); printf("i ETC/Check_.png,223,75\r"); n++;}
 		if(PageValue.s_FireRecvResult_1[EXT_RESULT]==1)   { printf("i ETC/Check.png,197,96\r"); printf("i ETC/Check_.png,223,97\r"); n++;}
@@ -538,7 +618,7 @@ void TestResultCheck(unsigned int Label)
 
 		break;
 	case 4:
-       
+
 		AlramPrint();
 		if(PageValue.s_FireRecvResult_2[MSL_RESULT]==1)   { printf("i ETC/Check.png,197,73\r"); printf("i ETC/Check_.png,223,75\r"); n++;}
 		if(PageValue.s_FireRecvResult_2[EXT_RESULT]==1)   { printf("i ETC/Check.png,197,96\r"); printf("i ETC/Check_.png,223,97\r"); n++;}
@@ -567,7 +647,7 @@ void RelayControl() // 타이머 카운터로 인해 600ms 마다 반복동작함.
 	PORTG = ChipSelectParam[SEL_DATA];//PORTG = 0x0044; // CS4, CS3, CS2 DATA 선택
 	PORTG = ChipSelectParam[SEL_ADC];// PORTG = 0x0004; // CS3, CS2     DATA 초기화
 
-	PORTD = RelaySelectParam[Add];//PORTD = 0x0008;// A3 - H -> 릴레이 1번 제어            
+	PORTD = RelaySelectParam[Add];//PORTD = 0x0008;// A3 - H -> 릴레이 1번 제어
 	PORTG = ChipSelectParam[SEL_ADDRESS];//PORTG = 0x0006;// CS3, CS2, CS1    ADDRESS 선택
 	PORTG = ChipSelectParam[SEL_ADC];// PORTG = 0x0004; // CS3, CS2         ADDRESS 초기화
 
@@ -581,7 +661,7 @@ void InitRelay(void)
 {
 	PORTD = 0x0000;                 // DO 0~7번 사용 안할경우 0으로 초기화
 	PORTG = ChipSelectParam[SEL_ADC];
-} 
+}
 void AlramPrint()
 {
 	if(PageValue.s_Check[CHK_VOLT] == 1) printf("i ETC/VoltGood.png,0,0\r");        // 내부 전원 정상시 알람 출력
@@ -599,11 +679,13 @@ void RelayLedControl(unsigned char Ch, unsigned char On_Off)
 	PORTG = ChipSelectParam[SEL_LEDADC];   //  ADC(CS2) + LED(CS0)
 	PORTG = ChipSelectParam[SEL_ADC];   // ADC(CS2)
 }
+
+ // <editor-fold defaultstate="collapsed" desc="잔류전압점검">
 void ResidualVoltTest(void)     // 잔류 전압 점검(완료  ADC값 검증 필요)FORI0번 건너 뛰고 비교해야됨
 {
 	int fori;
 	InitRelay();    // 릴레이 초기화
-	
+
 	IEC1bits.INT1IE = 0;	// 인터럽트 1중지
 	IEC1bits.INT2IE = 0;    // 인터럽트 2중지
 	RelayLedControl(RESIDUAL_RELAY,ON); // ON = 1 릴레이 0번
@@ -625,7 +707,7 @@ void ResidualVoltTest(void)     // 잔류 전압 점검(완료  ADC값 검증 필요)FORI0번 
 			EctsStatus.ResidualVoltTestResult[fori].ResidualVoltTestValue = Adc7980Value.s_Value[fori];  // 채널별로 ADC로 읽은 값을 저장
 			EctsStatus.ResidualVoltTestResult[fori].ResidualVoltTestValue = fabs(SelfTest.s_Vref - EctsStatus.ResidualVoltTestResult[fori].ResidualVoltTestValue);
 			// 내부 전원점검의 기준전압 - ADC 측정된 채널값의 절대값을 = ADC의 측정된 값에 다시 저장
-			// 비정상을 판단 하는 기준을 구하는 공식 : Vref - ( Vref - xV)) 
+			// 비정상을 판단 하는 기준을 구하는 공식 : Vref - ( Vref - xV))
 			// 차동증폭기는 Vin - Vout 값의 비례로 증폭되며 이 값에 따라 극성이 선택된다. 그래서 기준전압과 측정된 값을 뺀 값을 채널값에 저장
 			// 그리고 그값과 비정상으로 판단하는 기준값과 비교하여 정상 / 비정상 판단.
 			// 잔류 전압은 케이블 내부에 남아있는 전압값을 측정하는 검사 즉 정상 기준값보다 낮으면 정상/ 높으면 비정상
@@ -641,19 +723,19 @@ void ResidualVoltTest(void)     // 잔류 전압 점검(완료  ADC값 검증 필요)FORI0번 
 			if(EctsStatus.ResidualVoltTestResult[fori].ResidualVoltTestStatus == 1)    // 잔류 전압 점검 결과 비정상일경우 통합 결과 증가
 			{
 				EctsStatus.ResidualVoltTestTotalResult++;
-			} 
+			}
 		}
 		g_RelayChannel = 0;
 		IFS1bits.INT1IF = 0;
 		IFS1bits.INT2IF = 0;
 		IEC1bits.INT1IE = 1;        // 인터럽트1 동작
 		IEC1bits.INT2IE = 1;        // 인터럽트2 동작
-	} 
+	}
 }
 void ResidualVoltTestResult(void)
 {
 	printf("i Result/ResidualVoltResult.png,0,0\r");
-	AlramPrint();  
+	AlramPrint();
 
 	int ChannelCount;
 	int x=136;
@@ -677,7 +759,7 @@ void ResidualVoltTestResult(void)
 void ResidualVoltTestResultDebug(void)
 {
     printf("i Result_D/ResidualVoltResult_D.png,0,0\r");
-	AlramPrint();  
+	AlramPrint();
     int ChannelCount;
 	int x=136;
 	int y=72;
@@ -694,12 +776,15 @@ void ResidualVoltTestResultDebug(void)
 		y= y + 24;
 	}
 }
+  // </editor-fold>
+
+ // <editor-fold defaultstate="collapsed" desc="절연 점검">
 void InsulationTest(void)       // 절연 점검(완료 ADC값 검증 필요)FORI0번 건너 뛰고 비교해야됨
 {
 	int fori;
 	InitRelay();    // 릴레이 초기화
-	IEC1bits.INT1IE = 0;	
-	IEC1bits.INT2IE = 0;	
+	IEC1bits.INT1IE = 0;
+	IEC1bits.INT2IE = 0;
 	RelayLedControl(RESIDUAL_RELAY,OFF); // OFF = 0 릴레이 0번
 	RelayLedControl(INSUL_RELAY,ON);   // ON = 1 릴레이 1번
 
@@ -732,7 +817,7 @@ void InsulationTest(void)       // 절연 점검(완료 ADC값 검증 필요)FORI0번 건너 �
 			{
 				EctsStatus.InsulTestTotalResult++;
 			}
-			// </editor-fold>   
+			// </editor-fold>
 		}
 		g_RelayChannel = 0;
 		IFS1bits.INT1IF = 0;
@@ -744,8 +829,8 @@ void InsulationTest(void)       // 절연 점검(완료 ADC값 검증 필요)FORI0번 건너 �
 void InsulationTestResult(void)
 {
 	printf("i Result/InsulResult.png,0,0\r");
-	AlramPrint();  
-    
+	AlramPrint();
+
 	int ChannelCount;
 	int x=136;
 	int y=72;
@@ -763,13 +848,13 @@ void InsulationTestResult(void)
 		else printf("f X,%d,%d\r",z, y);
 		y= y + 24;
 	}
-	
+
 }
 void InsulationTestResultDebug(void)
 {
     printf("i Result_D/InsulResult_D.png,0,0\r");
-	AlramPrint();  
-    
+	AlramPrint();
+
 	int ChannelCount;
 	int x=136;
 	int y=72;
@@ -786,12 +871,15 @@ void InsulationTestResultDebug(void)
 		y= y + 24;
 	}
 }
+ // </editor-fold>
+
+ // <editor-fold defaultstate="collapsed" desc="도통 단선 점검">
 void ShortTest(void)            // 도통단선점검(완료 ADC값 검증 필요)FORI0번 건너 뛰고 비교해야됨
 {
 	int fori;
 	InitRelay();    // 릴레이 초기화
-	IEC1bits.INT1IE = 0;	
-	IEC1bits.INT2IE = 0;	
+	IEC1bits.INT1IE = 0;
+	IEC1bits.INT2IE = 0;
 	RelayLedControl(RESIDUAL_RELAY,OFF); // OFF = 0 릴레이 0번
 	RelayLedControl(INSUL_RELAY,OFF);   // OFF = 0 릴레이 1번
 	memset(&EctsStatus.ShortTestResult[0],0,sizeof(EctsStatus.ShortTestResult[0])*20); // 20개 채널 0으로 초기화
@@ -821,7 +909,7 @@ void ShortTest(void)            // 도통단선점검(완료 ADC값 검증 필요)FORI0번 건�
 			if(EctsStatus.ShortTestResult[fori].ShortTestStatus == 1)    // 도통/단선 점검 결과 비정상일경우 통합 결과 증가
 			{
 				EctsStatus.ShortTestTotalResult++;
-			}  
+			}
 			// </editor-fold>
 		}
 
@@ -830,12 +918,12 @@ void ShortTest(void)            // 도통단선점검(완료 ADC값 검증 필요)FORI0번 건�
 		IFS1bits.INT2IF = 0;
 		IEC1bits.INT1IE = 1;        // 인터럽트1 동작
 		IEC1bits.INT2IE = 1;        // 인터럽트2 동작
-	} 
+	}
 }
 void ShortTestResult(void)
-{   
+{
 	printf("i Result/ShortResult.png,0,0\r");
-	AlramPrint();  
+	AlramPrint();
 	int ChannelCount;
 	int x=136;
 	int y=72;
@@ -857,7 +945,7 @@ void ShortTestResult(void)
 void ShortTestResultDebug(void)
 {
     	printf("i Result_D/ShortResult_D.png,0,0\r");
-	AlramPrint();  
+	AlramPrint();
 	int ChannelCount;
 	int x=136;
 	int y=72;
@@ -874,6 +962,8 @@ void ShortTestResultDebug(void)
 		y= y + 24;
 	}
 }
+ // </editor-fold>
+
 unsigned int ReadADC7980(void)
 {
 	unsigned int data;
@@ -889,7 +979,7 @@ unsigned int ReadADC7980(void)
 	return data;
 }
 void ReadADCValue(unsigned int AverageCount)
-{  
+{
 	unsigned char n;
 	Adc7980Value.s_Sum[g_RelayChannel] = 0;
 	for(n=0; n<AverageCount; n++){
@@ -951,27 +1041,28 @@ void MenuDisplay(void)
         // <editor-fold defaultstate="collapsed" desc="자체 점검 선택">
         if(ButtonValue.s_OkButton == 1)
         {
-            
+
                 switch(g_InputValue)
                 {
                     // <editor-fold defaultstate="collapsed" desc="점검">
                 case 1:
                     printf("i TESTING/ResidualTesting.png,0,0\r");
                     AlramPrint();
-                    ResidualVoltTest(); 
+                    ResidualVoltTest();
                     PageValue.s_Self[SELF_RES_TEST] = 1;  // 자체 점검 완료 플래그
+                   
                     printf("i MENU/SelfTestMenu.png,0,0\r"); // 점화계통 점검 메뉴 출력
                     AlramPrint();
                     TestResultCheck(1);                  // 점검 결과 표시
                     // 점검 완료시 버튼 플래그 초기화
-                    ButtonValue.s_OkButton = 0; // 점검이 완료 되어서 
+                    ButtonValue.s_OkButton = 0; // 점검이 완료 되어서
                     g_MenuPage =1;// g_MenuPage == 0 ? 1:0;   //1
                     g_InputValue = 0;
                     break;
                 case 2:
                     printf("i TESTING/ShortTesting.png,0,0\r");
                     AlramPrint();
-                    ShortTest(); 
+                    ShortTest();
                     PageValue.s_Self[SELF_SHO_TEST] = 1;  // 도통/단선 점검
                     printf("i MENU/SelfTestMenu.png,0,0\r"); // 점화계통 점검 메뉴 출력
                     AlramPrint();
@@ -984,7 +1075,7 @@ void MenuDisplay(void)
                     break;
                 case 3:
                     printf("i TESTING/InsulTesting.png,0,0\r");
-                    AlramPrint();    
+                    AlramPrint();
                    InsulationTest();
                     PageValue.s_Self[SELF_INS_TEST] = 1;  // 절연 점검
                      printf("i MENU/SelfTestMenu.png,0,0\r"); // 점화계통 점검 메뉴 출력
@@ -997,23 +1088,23 @@ void MenuDisplay(void)
                     g_InputValue = 0;
                     break;
                 case 4:
-                     
+
                     printf("i TESTING/ResidualTesting.png,0,0\r");
                     AlramPrint();
-                    ResidualVoltTest(); 
+                    ResidualVoltTest();
                      PageValue.s_Self[SELF_RES_TEST] = 1;  // 자체 점검
-                   
+
                     printf("i TESTING/ShortTesting.png,0,0\r");
                     AlramPrint();
-                    ShortTest(); 
+                    ShortTest();
                      PageValue.s_Self[SELF_SHO_TEST] = 1;  // 도통/단선 점검
-                   
+
                     printf("i TESTING/InsulTesting.png,0,0\r");
-                    AlramPrint();    
+                    AlramPrint();
                     InsulationTest();
                      PageValue.s_Self[SELF_INS_TEST] = 1;  // 절연 점검
-                    TestResultCheck(1); 
-                    ButtonValue.s_OkButton = 0; // 점검이 완료 되어서 
+                    TestResultCheck(1);
+                    ButtonValue.s_OkButton = 0; // 점검이 완료 되어서
                     ButtonValue.s_BackButton = 0;
                     ButtonValue.s_NextButton = 0;
                     g_MenuPage =1;// g_MenuPage == 0 ? 1:0;   //1
@@ -1021,7 +1112,7 @@ void MenuDisplay(void)
                     break;
                        // </editor-fold>
                 }
-            
+
         }
         else if(ButtonValue.s_NextButton == 1)
         {
@@ -1058,13 +1149,13 @@ void MenuDisplay(void)
                       // </editor-fold>
             }
         }
-       
+
         else if((ButtonValue.s_BackButton == 1) && (PORTEbits.RE4 == 0))
         {
             switch(g_MenuPage)
             {
                  // <editor-fold defaultstate="collapsed" desc="이전화면">
-            
+
                 case 0:
                     TestResultCheck(1);                 // 자체 점검 결과 화면 출력
 					if(PageValue.s_SelfResult[SELF_RES_RESULT] == 1)	PageValue.s_SelfResult[SELF_RES_RESULT] = 0;
@@ -1085,11 +1176,11 @@ void MenuDisplay(void)
                  // </editor-fold>
             }
         }
-        
+
           // </editor-fold>
     }
-    
-    else if(PageValue.s_Line[LINE_TEST] == 1)  
+
+    else if(PageValue.s_Line[LINE_TEST] == 1)
 	{
         // <editor-fold defaultstate="collapsed" desc="점화 계통 점검 선택">
         if(ButtonValue.s_OkButton == 1)
@@ -1100,20 +1191,20 @@ void MenuDisplay(void)
                 case 1:
                     printf("i TESTING/ResidualTesting.png,0,0\r");
                     AlramPrint();
-                    ResidualVoltTest(); 
+                    ResidualVoltTest();
                     PageValue.s_Line[LINE_RES_TEST] = 1;  // 자체 점검 완료 플래그
                     printf("i MENU/LineTestMenu.png,0,0\r"); // 자체 점검 메뉴 출력
                     AlramPrint();
                     TestResultCheck(2);                  // 점검 결과 표시
                     // 점검 완료시 버튼 플래그 초기화
-                    ButtonValue.s_OkButton = 0; // 점검이 완료 되어서 
+                    ButtonValue.s_OkButton = 0; // 점검이 완료 되어서
                     g_MenuPage =1;// g_MenuPage == 0 ? 1:0;   //1
                     g_InputValue = 0;
                     break;
                 case 2:
                     printf("i TESTING/ShortTesting.png,0,0\r");
                     AlramPrint();
-                    ShortTest(); 
+                    ShortTest();
                     PageValue.s_Line[LINE_SHO_TEST] = 1;  // 도통/단선 점검
                     printf("i MENU/LineTestMenu.png,0,0\r"); // 자체 점검 메뉴 출력
                     AlramPrint();
@@ -1126,13 +1217,13 @@ void MenuDisplay(void)
                     break;
                 case 3:
                     printf("i TESTING/InsulTesting.png,0,0\r");
-                    AlramPrint();    
+                    AlramPrint();
                    InsulationTest();
                     PageValue.s_Line[LINE_INS_TEST] = 1;  // 절연 점검
                      printf("i MENU/LineTestMenu.png,0,0\r"); // 자체 점검 메뉴 출력
                     AlramPrint();
                      TestResultCheck(2);                  // 점검 결과 표시
-                      
+
                     ButtonValue.s_OkButton = 0;       // 확인 버튼 초기화
                     ButtonValue.s_BackButton = 0;
                     ButtonValue.s_NextButton = 0;
@@ -1143,17 +1234,17 @@ void MenuDisplay(void)
                       PageValue.s_Line[LINE_RES_TEST] = 1;  // 자체 점검
                     printf("i TESTING/ResidualTesting.png,0,0\r");
                     AlramPrint();
-                    ResidualVoltTest(); 
+                    ResidualVoltTest();
                     PageValue.s_Line[LINE_SHO_TEST] = 1;  // 도통/단선 점검
                     printf("i TESTING/ShortTesting.png,0,0\r");
                     AlramPrint();
-                    ShortTest(); 
+                    ShortTest();
                     PageValue.s_Line[LINE_INS_TEST] = 1;  // 절연 점검
                     printf("i TESTING/InsulTesting.png,0,0\r");
-                    AlramPrint();    
+                    AlramPrint();
                     InsulationTest();
                     TestResultCheck(2);                  // 점검 결과 표시
-                    ButtonValue.s_OkButton = 0; // 점검이 완료 되어서 
+                    ButtonValue.s_OkButton = 0; // 점검이 완료 되어서
                     ButtonValue.s_BackButton = 0;
                     ButtonValue.s_NextButton = 0;
                     g_MenuPage =1;// g_MenuPage == 0 ? 1:0;   //1
@@ -1199,7 +1290,7 @@ void MenuDisplay(void)
             switch(g_MenuPage)
             {
                  // <editor-fold defaultstate="collapsed" desc="이전화면">
-            
+
                 case 0:
                     TestResultCheck(2);                 // 자체 점검 결과 화면 출력
 					if(PageValue.s_LineResult[LINE_RES_RESULT] == 1)	PageValue.s_LineResult[LINE_RES_RESULT] = 0;
@@ -1272,7 +1363,7 @@ void MenuDisplay(void)
 			printf("i MENU/ModeMenu.png,0,0\r");        // 모드 선택 화면 출력
 			AlramPrint();
 
-			PageValue.s_Fire[FIRE_TEST] = 0;    
+			PageValue.s_Fire[FIRE_TEST] = 0;
 			PageValue.s_First[MODE_SEL] = 1;
 			if(PageValue.s_Fire[FIRE_TEST_EACH_1] == 1)PageValue.s_Fire[FIRE_TEST_EACH_1] = 0;
 			else if(PageValue.s_Fire[FIRE_TEST_TOTAL_1] == 1)PageValue.s_Fire[FIRE_TEST_TOTAL_1] = 0;
@@ -1292,21 +1383,21 @@ void MenuDisplay(void)
 			switch(g_InputValue)
 			{
 			case 1:
-				PageValue.s_FireRecvResult_1[MSL_RESULT] = 1; // 유도탄 전원 수신 확인 
+				PageValue.s_FireRecvResult_1[MSL_RESULT] = 1; // 유도탄 전원 수신 확인
 				TestResultCheck(3);         // 점검 결과 표시
 				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 2:
-				PageValue.s_FireRecvResult_1[EXT_RESULT] = 1; // 유도탄 전원 수신 확인 
-				TestResultCheck(3);
+				PageValue.s_FireRecvResult_1[EXT_RESULT] = 1; // 유도탄 전원 수신 확인
+                TestResultCheck(3);
 				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 3:
-				
+
 				PageValue.s_FireRecvResult_1[EB_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                 TestResultCheck(3);
 				ButtonValue.s_OkButton = 0;
@@ -1323,7 +1414,7 @@ void MenuDisplay(void)
 			case 5:
 				PageValue.s_FireRecvResult_1[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                 TestResultCheck(3);
-				ButtonValue.s_OkButton = 0; 
+				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
@@ -1337,21 +1428,21 @@ void MenuDisplay(void)
 			case 7:
 				PageValue.s_FireRecvResult_1[ARMING_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                 TestResultCheck(3);
-				ButtonValue.s_OkButton = 0; 
+				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 8:
 				PageValue.s_FireRecvResult_1[INTARM_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                 TestResultCheck(3);
-				ButtonValue.s_OkButton = 0; 
+				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 9:
 				PageValue.s_FireRecvResult_1[INT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                 TestResultCheck(3);
-				ButtonValue.s_OkButton = 0; 
+				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
@@ -1365,9 +1456,9 @@ void MenuDisplay(void)
 			{
 			case 1:
 				printf("i Result/MSLEXTPWR.png,0,0\r");
-				AlramPrint();   
+				AlramPrint();
 
-				PageValue.s_FireDetailResult_1[MSL_RESULT] = 1; 
+				PageValue.s_FireDetailResult_1[MSL_RESULT] = 1;
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1401,7 +1492,7 @@ void MenuDisplay(void)
 			case 5:
 				printf("i Result/ABATSQB.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_1[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글 
+				PageValue.s_FireDetailResult_1[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1450,7 +1541,7 @@ void MenuDisplay(void)
 			switch(g_MenuPage)
 			{
 			case 0:
-                	printf("i MENU/FireEachTestMenu_1.png,0,0\r");  
+                	printf("i MENU/FireEachTestMenu_1.png,0,0\r");
 				TestResultCheck(3);                 // 자체 점검 결과 화면 출력
 			if(PageValue.s_FireDetailResult_1[MSL_RESULT]==1) PageValue.s_FireDetailResult_1[MSL_RESULT]=0;
               	else if(PageValue.s_FireDetailResult_1[MSL_RESULT]==1) PageValue.s_FireDetailResult_1[MSL_RESULT]=0;
@@ -1468,7 +1559,7 @@ void MenuDisplay(void)
 				g_MenuPage = 1; //g_MenuPage == 0 ? 1:0;   //1
 				break;
 			case 1:
-				printf("i MENU/FireTestMenu.png,0,0\r");     
+				printf("i MENU/FireTestMenu.png,0,0\r");
 				AlramPrint();
 				PageValue.s_Fire[FIRE_TEST] = 1;
 				PageValue.s_Fire[FIRE_TEST_EACH_1] = 0;
@@ -1479,8 +1570,8 @@ void MenuDisplay(void)
 		}
         	// </editor-fold>
 	}
-    
-    else if(PageValue.s_Fire[FIRE_TEST_TOTAL_1]==1) //&& (PageValue.s_Check[CHK_LAN])) 
+
+    else if(PageValue.s_Fire[FIRE_TEST_TOTAL_1]==1) //&& (PageValue.s_Check[CHK_LAN]))
 	{
         // <editor-fold defaultstate="collapsed" desc="1호탄 통합 점검">
 		if(ButtonValue.s_OkButton == 1)
@@ -1489,21 +1580,21 @@ void MenuDisplay(void)
 			switch(g_InputValue)
 			{
 			case 1:
-				PageValue.s_FireRecvResult_1[MSL_RESULT] = 1; // 유도탄 전원 수신 확인 
+				PageValue.s_FireRecvResult_1[MSL_RESULT] = 1; // 유도탄 전원 수신 확인
 				TestResultCheck(3);         // 점검 결과 표시
 				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 2:
-				PageValue.s_FireRecvResult_1[EXT_RESULT] = 1; // 유도탄 전원 수신 확인 
+				PageValue.s_FireRecvResult_1[EXT_RESULT] = 1; // 유도탄 전원 수신 확인
 				TestResultCheck(3);
 				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 3:
-				
+
 				PageValue.s_FireRecvResult_1[EB_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                 TestResultCheck(3);
 				ButtonValue.s_OkButton = 0;
@@ -1520,7 +1611,7 @@ void MenuDisplay(void)
 			case 5:
 				PageValue.s_FireRecvResult_1[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                 TestResultCheck(3);
-				ButtonValue.s_OkButton = 0; 
+				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
@@ -1534,21 +1625,21 @@ void MenuDisplay(void)
 			case 7:
 				PageValue.s_FireRecvResult_1[ARMING_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                 TestResultCheck(3);
-				ButtonValue.s_OkButton = 0; 
+				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 8:
 				PageValue.s_FireRecvResult_1[INTARM_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                 TestResultCheck(3);
-				ButtonValue.s_OkButton = 0; 
+				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 9:
 				PageValue.s_FireRecvResult_1[INT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                 TestResultCheck(3);
-				ButtonValue.s_OkButton = 0; 
+				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
@@ -1562,9 +1653,9 @@ void MenuDisplay(void)
 			{
 			case 1:
 				printf("i Result/MSLEXTPWR.png,0,0\r");
-				AlramPrint();   
+				AlramPrint();
 
-				PageValue.s_FireDetailResult_1[MSL_RESULT] = 1; 
+				PageValue.s_FireDetailResult_1[MSL_RESULT] = 1;
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1598,7 +1689,7 @@ void MenuDisplay(void)
 			case 5:
 				printf("i Result/ABATSQB.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_1[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글 
+				PageValue.s_FireDetailResult_1[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1647,7 +1738,7 @@ void MenuDisplay(void)
 			switch(g_MenuPage)
 			{
 			case 0:
-                printf("i MENU/FireTotalTestMenu_1.png,0,0\r");         
+                printf("i MENU/FireTotalTestMenu_1.png,0,0\r");
 				TestResultCheck(3);                 // 자체 점검 결과 화면 출력
 			if(PageValue.s_FireDetailResult_1[MSL_RESULT]==1) PageValue.s_FireDetailResult_1[MSL_RESULT]=0;
               	else if(PageValue.s_FireDetailResult_1[MSL_RESULT]==1) PageValue.s_FireDetailResult_1[MSL_RESULT]=0;
@@ -1665,7 +1756,7 @@ void MenuDisplay(void)
 				g_MenuPage = 1; //g_MenuPage == 0 ? 1:0;   //1
 				break;
 			case 1:
-				printf("i MENU/FireTestMenu.png,0,0\r");     
+				printf("i MENU/FireTestMenu.png,0,0\r");
 				AlramPrint();
 				PageValue.s_Fire[FIRE_TEST] = 1;
 				PageValue.s_Fire[FIRE_TEST_EACH_1] = 0;
@@ -1676,8 +1767,8 @@ void MenuDisplay(void)
 		}
         // </editor-fold>
 	}
-    
-    
+
+
     else if(PageValue.s_Fire[FIRE_TEST_EACH_2]==1) //&& (PageValue.s_Check[CHK_LAN])) // 1호탄 개별 점검 개별 메시지 전송 및 수신
 	{
         // <editor-fold defaultstate="collapsed" desc="2호탄 개별 점검">
@@ -1687,21 +1778,21 @@ void MenuDisplay(void)
 			switch(g_InputValue)
 			{
 			case 1:
-				PageValue.s_FireRecvResult_2[MSL_RESULT] = 1; // 유도탄 전원 수신 확인 
+				PageValue.s_FireRecvResult_2[MSL_RESULT] = 1; // 유도탄 전원 수신 확인
 				TestResultCheck(4);         // 점검 결과 표시
 				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 2:
-				PageValue.s_FireRecvResult_2[EXT_RESULT] = 1; // 유도탄 전원 수신 확인 
+				PageValue.s_FireRecvResult_2[EXT_RESULT] = 1; // 유도탄 전원 수신 확인
 				TestResultCheck(4);
 				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 3:
-				
+
 				PageValue.s_FireRecvResult_2[EB_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                TestResultCheck(4);
 				ButtonValue.s_OkButton = 0;
@@ -1718,7 +1809,7 @@ void MenuDisplay(void)
 			case 5:
 				PageValue.s_FireRecvResult_2[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                TestResultCheck(4);
-				ButtonValue.s_OkButton = 0; 
+				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
@@ -1732,21 +1823,21 @@ void MenuDisplay(void)
 			case 7:
 				PageValue.s_FireRecvResult_2[ARMING_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                 TestResultCheck(4);
-				ButtonValue.s_OkButton = 0; 
+				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 8:
 				PageValue.s_FireRecvResult_2[INTARM_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                TestResultCheck(4);
-				ButtonValue.s_OkButton = 0; 
+				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 9:
 				PageValue.s_FireRecvResult_2[INT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                TestResultCheck(4);
-				ButtonValue.s_OkButton = 0; 
+				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
@@ -1760,9 +1851,9 @@ void MenuDisplay(void)
 			{
 			case 1:
 				printf("i Result/MSLEXTPWR.png,0,0\r");
-				AlramPrint();   
+				AlramPrint();
 
-				PageValue.s_FireDetailResult_2[MSL_RESULT] = 1; 
+				PageValue.s_FireDetailResult_2[MSL_RESULT] = 1;
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1796,7 +1887,7 @@ void MenuDisplay(void)
 			case 5:
 				printf("i Result/ABATSQB.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_2[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글 
+				PageValue.s_FireDetailResult_2[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1845,7 +1936,7 @@ void MenuDisplay(void)
 			switch(g_MenuPage)
 			{
 			case 0:
-                printf("i MENU/FireEachTestMenu_2.png,0,0\r");     
+                printf("i MENU/FireEachTestMenu_2.png,0,0\r");
 				TestResultCheck(4);                 // 자체 점검 결과 화면 출력
 				if(PageValue.s_FireDetailResult_2[MSL_RESULT]==1) PageValue.s_FireDetailResult_2[MSL_RESULT]=0;
                 else if(PageValue.s_FireDetailResult_2[EXT_RESULT]==1) PageValue.s_FireDetailResult_2[EXT_RESULT]=0;
@@ -1862,7 +1953,7 @@ void MenuDisplay(void)
 				g_MenuPage = 1; //g_MenuPage == 0 ? 1:0;   //1
 				break;
 			case 1:
-				printf("i MENU/FireTestMenu.png,0,0\r");     
+				printf("i MENU/FireTestMenu.png,0,0\r");
 				AlramPrint();
 				PageValue.s_Fire[FIRE_TEST] = 1;
 				PageValue.s_Fire[FIRE_TEST_EACH_2] = 0;
@@ -1882,21 +1973,21 @@ void MenuDisplay(void)
 			switch(g_InputValue)
 			{
 			case 1:
-				PageValue.s_FireRecvResult_2[MSL_RESULT] = 1; // 유도탄 전원 수신 확인 
+				PageValue.s_FireRecvResult_2[MSL_RESULT] = 1; // 유도탄 전원 수신 확인
 				TestResultCheck(4);         // 점검 결과 표시
 				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 2:
-				PageValue.s_FireRecvResult_2[EXT_RESULT] = 1; // 유도탄 전원 수신 확인 
+				PageValue.s_FireRecvResult_2[EXT_RESULT] = 1; // 유도탄 전원 수신 확인
 				TestResultCheck(4);
 				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 3:
-				
+
 				PageValue.s_FireRecvResult_2[EB_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                TestResultCheck(4);
 				ButtonValue.s_OkButton = 0;
@@ -1913,7 +2004,7 @@ void MenuDisplay(void)
 			case 5:
 				PageValue.s_FireRecvResult_2[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                TestResultCheck(4);
-				ButtonValue.s_OkButton = 0; 
+				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
@@ -1927,21 +2018,21 @@ void MenuDisplay(void)
 			case 7:
 				PageValue.s_FireRecvResult_2[ARMING_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                 TestResultCheck(4);
-				ButtonValue.s_OkButton = 0; 
+				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 8:
 				PageValue.s_FireRecvResult_2[INTARM_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                TestResultCheck(4);
-				ButtonValue.s_OkButton = 0; 
+				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 9:
 				PageValue.s_FireRecvResult_2[INT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
                TestResultCheck(4);
-				ButtonValue.s_OkButton = 0; 
+				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
@@ -1955,9 +2046,9 @@ void MenuDisplay(void)
 			{
 			case 1:
 				printf("i Result/MSLEXTPWR.png,0,0\r");
-				AlramPrint();   
+				AlramPrint();
 
-				PageValue.s_FireDetailResult_2[MSL_RESULT] = 1; 
+				PageValue.s_FireDetailResult_2[MSL_RESULT] = 1;
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1991,7 +2082,7 @@ void MenuDisplay(void)
 			case 5:
 				printf("i Result/ABATSQB.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_2[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글 
+				PageValue.s_FireDetailResult_2[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -2040,7 +2131,7 @@ void MenuDisplay(void)
 			switch(g_MenuPage)
 			{
 			case 0:
-                printf("i MENU/FireTotalTestMenu_2.png,0,0\r");   
+                printf("i MENU/FireTotalTestMenu_2.png,0,0\r");
 				TestResultCheck(4);                 // 자체 점검 결과 화면 출력
 					if(PageValue.s_FireDetailResult_2[MSL_RESULT]==1) PageValue.s_FireDetailResult_2[MSL_RESULT]=0;
                 else if(PageValue.s_FireDetailResult_2[EXT_RESULT]==1) PageValue.s_FireDetailResult_2[EXT_RESULT]=0;
@@ -2057,7 +2148,7 @@ void MenuDisplay(void)
 				g_MenuPage = 1; //g_MenuPage == 0 ? 1:0;   //1
 				break;
 			case 1:
-				printf("i MENU/FireTestMenu.png,0,0\r");     
+				printf("i MENU/FireTestMenu.png,0,0\r");
 				AlramPrint();
 				PageValue.s_Fire[FIRE_TEST] = 1;
 				PageValue.s_Fire[FIRE_TEST_TOTAL_2] = 0;
@@ -2068,11 +2159,437 @@ void MenuDisplay(void)
 		}
     	// </editor-fold>
 	}
-  
+
+}
+
+void SendData(unsigned int Name)    // 16비트 배열로 전송됨
+{
+    switch(Name)
+    {
+        case 0: //  통신 점검
+            ConnectCheck.s_Opcode = 0x4005;
+            ConnectCheck.s_Repeat = 0;
+            ConnectCheck.s_SeqNo = 0;
+            ConnectCheck.s_DataSize = 0x0004;
+            ConnectCheck.s_LchrId = 0x0001;
+            ConnectCheck.s_McuId = 0x0001;
+            
+            g_DataBuffer[0] =  ConnectCheck.s_Opcode;
+            g_DataBuffer[1] =  ConnectCheck.s_Repeat;
+            g_DataBuffer[2] =  ConnectCheck.s_SeqNo;
+            g_DataBuffer[3] =  ConnectCheck.s_DataSize;
+            g_DataBuffer[4] =  ConnectCheck.s_LchrId;
+            g_DataBuffer[5] =  ConnectCheck.s_McuId;
+            break;
+        case 1: // 1호탄 발사 계통 점검
+           if(PageValue.s_Fire[FIRE_TEST_EACH_1]==1) FireTestCheck.s_Opcode = 0x4100;
+           else if(PageValue.s_Fire[FIRE_TEST_EACH_1]==1) FireTestCheck.s_Opcode = 0x4200;
+            FireTestCheck.s_Repeat = 0;
+              FireTestCheck.s_SeqNo = 0;
+                FireTestCheck.s_DataSize = 0x0008;
+               FireTestCheck.s_LchrId = 0x0001;
+                FireTestCheck.s_McuId = 0x0001;
+                 FireTestCheck.s_Time = 0;
+                 g_DataBuffer[0] = FireTestCheck.s_Opcode;
+                 g_DataBuffer[1] =FireTestCheck.s_Repeat;
+                 g_DataBuffer[2] =FireTestCheck.s_SeqNo;
+                 g_DataBuffer[3] =FireTestCheck.s_DataSize;
+                  g_DataBuffer[4] =(FireTestCheck.s_LchrId << 7);
+                   g_DataBuffer[4] =FireTestCheck.s_McuId ;
+                  g_DataBuffer[5] =FireTestCheck.s_Time;
+                 if(PageValue.s_FireRecvResult_1[MSL_RESULT] == 1)
+                 {
+                     FireTestCheck.s_MSLPWR = 0x02;
+                     FireTestCheck.s_EXTPWR = 0;
+                     FireTestCheck.s_EBSQUIB = 0;
+                     FireTestCheck.s_BATSQUIB = 0;
+                     FireTestCheck.s_ABARSQUIB = 0;
+                     FireTestCheck.s_BDUSQUIB = 0;
+                     FireTestCheck.s_ARMING = 0;
+                     FireTestCheck.s_INTARM = 0;
+                     FireTestCheck.s_INTSQUIB = 0;
+                     g_DataBuffer[6] =  (FireTestCheck.s_MSLPWR << 13);
+                     g_DataBuffer[7] = 0;
+                 }
+                 else if(PageValue.s_FireRecvResult_1[EXT_RESULT] == 1)
+                 {
+                     FireTestCheck.s_MSLPWR = 0;
+                     FireTestCheck.s_EXTPWR = 0x01;
+                     FireTestCheck.s_EBSQUIB = 0;
+                     FireTestCheck.s_BATSQUIB = 0;
+                     FireTestCheck.s_ABARSQUIB = 0;
+                     FireTestCheck.s_BDUSQUIB = 0;
+                     FireTestCheck.s_ARMING = 0;
+                     FireTestCheck.s_INTARM = 0;
+                     FireTestCheck.s_INTSQUIB = 0;
+                     g_DataBuffer[6] =  (FireTestCheck.s_EXTPWR << 11);
+                     g_DataBuffer[7] = 0;
+                 }
+                 else if(PageValue.s_FireRecvResult_1[EB_RESULT] == 1)
+                 {
+                     FireTestCheck.s_MSLPWR = 0;
+                     FireTestCheck.s_EXTPWR = 0;
+                     FireTestCheck.s_EBSQUIB = 0x01;
+                     FireTestCheck.s_BATSQUIB = 0;
+                     FireTestCheck.s_ABARSQUIB = 0;
+                     FireTestCheck.s_BDUSQUIB = 0;
+                     FireTestCheck.s_ARMING = 0;
+                     FireTestCheck.s_INTARM = 0;
+                     FireTestCheck.s_INTSQUIB = 0;
+                      g_DataBuffer[6] =  (FireTestCheck.s_EBSQUIB << 9);
+                     g_DataBuffer[7] = 0;
+                 }
+                  else if(PageValue.s_FireRecvResult_1[BAT_RESULT] == 1)
+                 {
+                     FireTestCheck.s_MSLPWR = 0;
+                     FireTestCheck.s_EXTPWR = 0;
+                     FireTestCheck.s_EBSQUIB = 0;
+                     FireTestCheck.s_BATSQUIB = 0x01;
+                     FireTestCheck.s_ABARSQUIB = 0;
+                     FireTestCheck.s_BDUSQUIB = 0;
+                     FireTestCheck.s_ARMING = 0;
+                     FireTestCheck.s_INTARM = 0;
+                     FireTestCheck.s_INTSQUIB = 0;
+                       g_DataBuffer[6] =  (FireTestCheck.s_BATSQUIB << 7);
+                     g_DataBuffer[7] = 0;
+                 }
+                   else if(PageValue.s_FireRecvResult_1[ABAT_RESULT] == 1)
+                 {
+                     FireTestCheck.s_MSLPWR = 0;
+                     FireTestCheck.s_EXTPWR = 0;
+                     FireTestCheck.s_EBSQUIB = 0;
+                     FireTestCheck.s_BATSQUIB = 0;
+                     FireTestCheck.s_ABARSQUIB = 0x01;
+                     FireTestCheck.s_BDUSQUIB = 0;
+                     FireTestCheck.s_ARMING = 0;
+                     FireTestCheck.s_INTARM = 0;
+                     FireTestCheck.s_INTSQUIB = 0;
+                      g_DataBuffer[6] =  (FireTestCheck.s_ABARSQUIB << 5);
+                     g_DataBuffer[7] = 0;
+                 }
+                   else if(PageValue.s_FireRecvResult_1[BDU_RESULT] == 1)
+                 {
+                     FireTestCheck.s_MSLPWR = 0;
+                     FireTestCheck.s_EXTPWR = 0;
+                     FireTestCheck.s_EBSQUIB = 0;
+                     FireTestCheck.s_BATSQUIB = 0;
+                     FireTestCheck.s_ABARSQUIB = 0;
+                     FireTestCheck.s_BDUSQUIB = 0x01;
+                     FireTestCheck.s_ARMING = 0;
+                     FireTestCheck.s_INTARM = 0;
+                     FireTestCheck.s_INTSQUIB = 0;
+                      g_DataBuffer[6] =  (FireTestCheck.s_BDUSQUIB << 3);
+                     g_DataBuffer[7] = 0;
+                 }
+                  else if(PageValue.s_FireRecvResult_1[ARMING_RESULT] == 1)
+                 {
+                     FireTestCheck.s_MSLPWR = 0;
+                     FireTestCheck.s_EXTPWR = 0;
+                     FireTestCheck.s_EBSQUIB = 0;
+                     FireTestCheck.s_BATSQUIB = 0;
+                     FireTestCheck.s_ABARSQUIB = 0;
+                     FireTestCheck.s_BDUSQUIB = 0;
+                     FireTestCheck.s_ARMING = 0x01;
+                     FireTestCheck.s_INTARM = 0;
+                     FireTestCheck.s_INTSQUIB = 0;
+                       g_DataBuffer[6] =  (FireTestCheck.s_ARMING << 1);
+                     g_DataBuffer[7] = 0;
+                 }
+                    else if(PageValue.s_FireRecvResult_1[INTARM_RESULT] == 1)
+                 {
+                     FireTestCheck.s_MSLPWR = 0;
+                     FireTestCheck.s_EXTPWR = 0;
+                     FireTestCheck.s_EBSQUIB = 0;
+                     FireTestCheck.s_BATSQUIB = 0;
+                     FireTestCheck.s_ABARSQUIB = 0;
+                     FireTestCheck.s_BDUSQUIB = 0;
+                     FireTestCheck.s_ARMING = 0;
+                     FireTestCheck.s_INTARM = 0x01;
+                     FireTestCheck.s_INTSQUIB = 0;
+                      g_DataBuffer[6] =  FireTestCheck.s_INTARM << 0;
+                     g_DataBuffer[7] = 0;
+                 }
+                   else if(PageValue.s_FireRecvResult_1[INT_RESULT] == 1)
+                 {
+                     FireTestCheck.s_MSLPWR = 0;
+                     FireTestCheck.s_EXTPWR = 0;
+                     FireTestCheck.s_EBSQUIB = 0;
+                     FireTestCheck.s_BATSQUIB = 0;
+                     FireTestCheck.s_ABARSQUIB = 0;
+                     FireTestCheck.s_BDUSQUIB = 0;
+                     FireTestCheck.s_ARMING = 0;
+                     FireTestCheck.s_INTARM = 0;
+                     FireTestCheck.s_INTSQUIB = 0x01;
+                     g_DataBuffer[6] = 0;
+                     g_DataBuffer[7] = (FireTestCheck.s_INTSQUIB << 13);
+                 }
+                 
+            break;
+            
+    }
+}
+
+void RecvData(unsigned int Name)                     // 16비트 배열로 수신됨
+{
+    switch(Name)
+    {
+        case 0: // 통신 점검 응답 
+            ConnectCheckAck.s_Opcode = g_TempBuffer[0];
+            ConnectCheckAck.s_Repeat = g_TempBuffer[1];
+            ConnectCheckAck.s_SeqNo = g_TempBuffer[2];
+            ConnectCheckAck.s_DataSize = g_TempBuffer[3];
+            ConnectCheckAck.s_LchrId = g_TempBuffer[4];
+            ConnectCheckAck.s_McuId = g_TempBuffer[5];
+            if( ConnectCheckAck.s_Opcode == 0x4005) PageValue.s_Check[CHK_LAN] = 1; // 랜 연결됨 
+            break;
+        case 1:
+            FireTestCheckResult.s_Opcode = g_TempBuffer[0]; 
+             FireTestCheckResult.s_Repeat = g_TempBuffer[1];
+              FireTestCheckResult.s_SeqNo = g_TempBuffer[2];
+               FireTestCheckResult.s_DataSize = g_TempBuffer[3];
+                FireTestCheckResult.s_LchrId = (g_TempBuffer[4] & 0xFF00);
+                 FireTestCheckResult.s_McuId = (g_TempBuffer[4] & 0x00FF);
+                 
+                  FireTestCheckResult.s_MSLPWR = (g_TempBuffer[5] & 0xF000); 
+             FireTestCheckResult.s_EXTPWR = (g_TempBuffer[5] & 0x0F00);
+              FireTestCheckResult.s_EBSQUIB = (g_TempBuffer[5] & 0x00FF);
+              
+               FireTestCheckResult.s_BATSQUIB = (g_TempBuffer[6] & 0xFF00);
+                FireTestCheckResult.s_ABATSQUIB = (g_TempBuffer[6] & 0x00FF);
+                
+                 FireTestCheckResult.s_BDUSQUIB = (g_TempBuffer[7] & 0xF000);
+                 FireTestCheckResult.s_ARMING = g_TempBuffer[7] & 0x0F00;
+                FireTestCheckResult.s_INTARM = (g_TempBuffer[7] & 0x00F0);
+                 FireTestCheckResult.s_INTSQUIB = (g_TempBuffer[7] & 0x000F);
+            break;
+    }
 }
 
 
+ unsigned char     socket(  unsigned char  protocol,  unsigned short port,  unsigned short mode)
+{
+   IINCHIP_WRITE(Sn_MR(7),( unsigned short)(protocol | mode)); // set Sn_MR with protocol & flag 0x0000 0000 0800 03C0, 0x02--1
+   if (port != 0) IINCHIP_WRITE(Sn_PORTR(7),port); // 0x0000 0000 0800 03CA, 3000--2
+   else
+   {
+      iinchip_source_port++;     // if don't set the source port, set local_port number.
+      IINCHIP_WRITE(Sn_PORTR(7),iinchip_source_port);  
+   }
+   setSn_CR(7, Sn_CR_OPEN);      // open s-th SOCKET--3
 
+   check_sendok_flag[7] = 1;     // initialize the sendok flag.
+
+   #ifdef __DEF_IINCHIP_DBG__
+      printf("%d : Sn_MR=0x%04x,Sn_PORTR=0x%04x(%d),Sn_SSR=%04x\r\n",s,IINCHIP_READ(Sn_MR(s)),IINCHIP_READ(Sn_PORTR(s)),IINCHIP_READ(Sn_PORTR(s)),getSn_SSR(s));
+   #endif
+   return 1;
+}
+
+void     close()
+{
+   // M_08082008 : It is fixed the problem that Sn_SSR cannot be changed a undefined value to the defined value.
+   //              Refer to Errata of W5300
+   //Check if the transmit data is remained or not.
+   if( ((getSn_MR(7)& 0x0F) == Sn_MR_TCP) && (getSn_TX_FSR(7) != getIINCHIP_TxMAX(7)) )
+   {
+       unsigned short loop_cnt =0;
+      while(getSn_TX_FSR(7) != getIINCHIP_TxMAX(7))
+      {
+         if(loop_cnt++ > 10)
+         {
+             unsigned char  destip[4];
+            // M_11252008 : modify dest ip address
+            //getSIPR(destip);
+            destip[0] = 0;destip[1] = 0;destip[2] = 0;destip[3] = 1;
+            socket(Sn_MR_UDP,0x3000,0);//0x02
+            sendto(( unsigned char *)"x",1,destip,0x3000); // send the dummy data to an unknown destination(0.0.0.1).
+            break; // M_11252008 : added break statement
+         }
+         wait_10ms(10);
+      }
+   };
+   ////////////////////////////////
+   setSn_IR(7 ,0x00FF);          // Clear the remained interrupt bits.
+   setSn_CR(7 ,Sn_CR_CLOSE);     // Close s-th SOCKET
+}
+
+unsigned long   sendto( unsigned char  * buf, unsigned long len,  unsigned char  * addr,  unsigned short port)
+{
+    unsigned char  status=0;
+    unsigned char  isr=0;
+   unsigned long ret=0;
+
+   #ifdef __DEF_IINCHIP_DBG__
+      printf("%d : sendto():%d.%d.%d.%d(%d), len=%d\r\n",s, addr[0], addr[1], addr[2], addr[3] , port, len);
+   #endif
+
+   if
+   (
+      ((addr[0] == 0x00) && (addr[1] == 0x00) && (addr[2] == 0x00) && (addr[3] == 0x00)) ||
+      ((port == 0x00)) ||(len == 0)
+   )
+   {
+      #ifdef __DEF_IINCHIP_DBG__
+         printf("%d : Fail[%d.%d.%d.%d, %.d, %d]\r\n",s, addr[0], addr[1], addr[2], addr[3] , port, len);
+      #endif
+      return 0;
+   }
+
+
+   if (len > getIINCHIP_TxMAX(7)) ret = getIINCHIP_TxMAX(7); // check size not to exceed MAX size.
+   else ret = len;
+
+   // set destination IP address
+   IINCHIP_WRITE(Sn_DIPR(7),((( unsigned short)addr[0])<<8) + ( unsigned short) addr[1]);
+   IINCHIP_WRITE(Sn_DIPR2(7),((( unsigned short)addr[2])<<8) + ( unsigned short) addr[3]);
+   // set destination port number
+   IINCHIP_WRITE(Sn_DPORTR(7),port);
+
+   wiz_write_buf(7, buf, ret);                              // copy data
+   // send
+   setSn_TX_WRSR(7,ret);
+   clearSUBR();
+   setSn_CR(7, Sn_CR_SEND);
+
+   while (!((isr = getSn_IR(7)) & Sn_IR_SENDOK))            // wait SEND command completion
+   {
+      status = getSn_SSR(7);                                // warning ---------------------------------------
+      if ((status == SOCK_CLOSED) || (isr & Sn_IR_TIMEOUT)) // Sn_IR_TIMEOUT causes the decrement of Sn_TX_FSR
+      {                                                     // -----------------------------------------------
+         #ifdef __DEF_IINCHIP_DBG__
+            printf("%d: send fail.status=0x%02x,isr=%02x\r\n",status,isr);
+         #endif
+         setSn_IR(7,Sn_IR_TIMEOUT);
+         return 0;
+      }
+   }
+   applySUBR();
+   setSn_IR(7, Sn_IR_SENDOK); // Clear Sn_IR_SENDOK
+
+
+   #ifdef __DEF_IINCHIP_DBG__
+      printf("%d : send()end\r\n",s);
+   #endif
+
+   return ret;
+}
+
+unsigned long   recvfrom( unsigned char  * buf, unsigned long len,  unsigned char  * addr,  unsigned short  *port)
+{
+    unsigned short head[4];
+   unsigned long data_len=0;
+  
+
+   #ifdef __DEF_IINCHIP_DBG__
+      printf("recvfrom()\r\n");
+   #endif
+
+   if ( len > 0 )
+   {
+      switch (IINCHIP_READ(Sn_MR(7)) & 0x07)       // check the mode of s-th SOCKET
+      {                                            // -----------------------------
+         case Sn_MR_UDP :                          // UDP mode
+            wiz_read_buf(7, ( unsigned char *)head, 8);      // extract the PACKET-INFO
+            // read peer's IP address, port number.
+            if(*(( volatile unsigned short*)MR) & MR_FS)            // check FIFO swap bit
+            {
+               head[0] = ((((head[0] << 8 ) & 0xFF00)) | ((head[0] >> 8)& 0x00FF));
+               head[1] = ((((head[1] << 8 ) & 0xFF00)) | ((head[1] >> 8)& 0x00FF));
+               head[2] = ((((head[2] << 8 ) & 0xFF00)) | ((head[2] >> 8)& 0x00FF));
+               head[3] = ((((head[3] << 8 ) & 0xFF00)) | ((head[3] >> 8)& 0x00FF));
+            }
+            addr[0] = ( unsigned char )(head[0] >> 8);       // destination IP address
+            addr[1] = ( unsigned char )head[0];
+            addr[2] = ( unsigned char )(head[1]>>8);
+            addr[3] = ( unsigned char )head[1];
+            *port = head[2];                       // destination port number
+            data_len = (unsigned long)head[3];            // DATA packet length
+
+            #ifdef __DEF_IINCHIP_DBG__
+               printf("UDP msg arrived:%d(0x%04x)\r\n",data_len,data_len);
+               printf("source Port : %d\r\n", *port);
+               printf("source IP : %d.%d.%d.%d\r\n", addr[0], addr[1], addr[2], addr[3]);
+            #endif
+
+            wiz_read_buf(7, buf, data_len);        // data copy.
+            break;
+           default :
+            break;
+      }
+      setSn_CR(7,Sn_CR_RECV);                      // recv
+   }
+   #ifdef __DEF_IINCHIP_DBG__
+      printf("recvfrom() end ..\r\n");
+   #endif
+
+   return data_len;
+}
+
+void     loopback_udp(  unsigned short port,   unsigned short mode)
+{
+   unsigned long len;
+    unsigned char  destip[4];
+    unsigned short destport;
+
+   switch(getSn_SSR(7))
+   {
+      case SOCK_UDP:                                     //
+         if((len=getSn_RX_RSR(7)) > 0)                   // check the size of received data
+         {
+            len = recvfrom(&g_TempBuffer,len,destip,&destport);  // receive data from a destination
+            if(len !=sendto(&g_DataBuffer,len,destip,destport))  // send the data to the destination
+            {
+               printf("%d : Sendto Fail.len=%d,",7,len);
+               printf("%d.%d.%d.%d(%d)\r\n",destip[0],destip[1],destip[2],destip[3],destport);
+            }
+         }
+         break;
+                                                         // -----------------
+      case SOCK_CLOSED:                                  // CLOSED
+         close();                                       // close the SOCKET
+         socket(Sn_MR_UDP,port,mode);                  // open the SOCKET with UDP mode
+         break;
+      default:
+         break;
+   }
+}
+
+void UdpSetting()
+{
+    unsigned char  tx_mem_conf[8] = {8,8,8,8,8,8,8,8};          // for setting TMSR regsiter
+    unsigned char  rx_mem_conf[8] = {8,8,8,8,8,8,8,8};          // for setting RMSR regsiter
+
+   
+    unsigned char  ip[4] = {192,168,111,200};                   // for setting SIP register
+    unsigned char  gw[4] = {192,168,111,1};                     // for setting GAR register
+    unsigned char  sn[4] = {255,255,255,0};                     // for setting SUBR register
+    unsigned char  mac[6] = {0x00,0x08,0xDC,0x00,111,200};      // for setting SHAR register
+
+    unsigned char  serverip[4] = {192,168,111,78};              // "TCP SERVER" IP address for loopback_tcpc()
+
+   status.terminalSpeed = 0x08;
+   status.downloadSpeed = 0x08;
+   /* initiate W5300 */
+   iinchip_init();
+
+   /* allocate internal TX/RX Memory of W5300 */
+   if(!sysinit(tx_mem_conf,rx_mem_conf))
+   {
+      printf("MEMORY CONFIG ERR.\r\n");
+      while(1);
+   }
+
+   /* verify network information */
+   getSHAR(mac);                                      // get source hardware address
+   getGAR(gw);                                        // get gateway IP address
+   getSUBR(sn);                                       // get subnet mask address
+   getSIPR(ip);                                       // get source IP address
+
+   printf("SHAR : %02x:%02x:%02x:%02x:%02x:%02x\r\n",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+   printf("GWR  : %d.%d.%d.%d\r\n",gw[0],gw[1],gw[2],gw[3]);
+   printf("SUBR : %d.%d.%d.%d\r\n",sn[0],sn[1],sn[2],sn[3]);
+   printf("SIPR : %d.%d.%d.%d\r\n",ip[0],ip[1],ip[2],ip[3]);
+}
 int main(void)
 {
 	InitGPIO();          // gpio 초기화
@@ -2085,6 +2602,7 @@ int main(void)
 	InitTimer2();
 	InnerVoltTest();      // 내부 전압 점검
 	InitInterrupt();       // 인터럽트 초기화
+    UdpSetting();           // udp 통신 설정
 	IFS1bits.INT1IF = 0;		// INT1 Interrupt Flag Clear
 	IFS1bits.INT2IF = 0;		// INT2 Interrupt Flag Clear
 	IFS0bits.T1IF = 0;			// T1 Interrupt Flag Clear
@@ -2096,6 +2614,7 @@ int main(void)
         while(1)
         {
              if(PageValue.s_Check[CHK_VOLT] == 1)   MenuDisplay();// 화면 출력 부분
+             
         }
     }
 	return(0);
