@@ -57,17 +57,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=lib/init_drv.c main.c W5300_Udp.c
+SOURCEFILES_QUOTED_IF_SPACED=main.c init_drv.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/lib/init_drv.o ${OBJECTDIR}/main.o ${OBJECTDIR}/W5300_Udp.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/lib/init_drv.o.d ${OBJECTDIR}/main.o.d ${OBJECTDIR}/W5300_Udp.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/main.o ${OBJECTDIR}/init_drv.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/main.o.d ${OBJECTDIR}/init_drv.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/lib/init_drv.o ${OBJECTDIR}/main.o ${OBJECTDIR}/W5300_Udp.o
+OBJECTFILES=${OBJECTDIR}/main.o ${OBJECTDIR}/init_drv.o
 
 # Source Files
-SOURCEFILES=lib/init_drv.c main.c W5300_Udp.c
+SOURCEFILES=main.c init_drv.c
 
 
 CFLAGS=
@@ -106,13 +106,6 @@ endif
 # ------------------------------------------------------------------------------------
 # Rules for buildStep: compile
 ifeq ($(TYPE_IMAGE), DEBUG_RUN)
-${OBJECTDIR}/lib/init_drv.o: lib/init_drv.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} "${OBJECTDIR}/lib" 
-	@${RM} ${OBJECTDIR}/lib/init_drv.o.d 
-	@${RM} ${OBJECTDIR}/lib/init_drv.o.ok ${OBJECTDIR}/lib/init_drv.o.err 
-	@${RM} ${OBJECTDIR}/lib/init_drv.o 
-	@${FIXDEPS} "${OBJECTDIR}/lib/init_drv.o.d" $(SILENT) -rsi ${MP_CC_DIR}../ -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -omf=elf -x c -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/lib/init_drv.o.d" -o ${OBJECTDIR}/lib/init_drv.o lib/init_drv.c    
-	
 ${OBJECTDIR}/main.o: main.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
 	@${RM} ${OBJECTDIR}/main.o.d 
@@ -120,21 +113,14 @@ ${OBJECTDIR}/main.o: main.c  nbproject/Makefile-${CND_CONF}.mk
 	@${RM} ${OBJECTDIR}/main.o 
 	@${FIXDEPS} "${OBJECTDIR}/main.o.d" $(SILENT) -rsi ${MP_CC_DIR}../ -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -omf=elf -x c -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/main.o.d" -o ${OBJECTDIR}/main.o main.c    
 	
-${OBJECTDIR}/W5300_Udp.o: W5300_Udp.c  nbproject/Makefile-${CND_CONF}.mk
+${OBJECTDIR}/init_drv.o: init_drv.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
-	@${RM} ${OBJECTDIR}/W5300_Udp.o.d 
-	@${RM} ${OBJECTDIR}/W5300_Udp.o.ok ${OBJECTDIR}/W5300_Udp.o.err 
-	@${RM} ${OBJECTDIR}/W5300_Udp.o 
-	@${FIXDEPS} "${OBJECTDIR}/W5300_Udp.o.d" $(SILENT) -rsi ${MP_CC_DIR}../ -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -omf=elf -x c -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/W5300_Udp.o.d" -o ${OBJECTDIR}/W5300_Udp.o W5300_Udp.c    
+	@${RM} ${OBJECTDIR}/init_drv.o.d 
+	@${RM} ${OBJECTDIR}/init_drv.o.ok ${OBJECTDIR}/init_drv.o.err 
+	@${RM} ${OBJECTDIR}/init_drv.o 
+	@${FIXDEPS} "${OBJECTDIR}/init_drv.o.d" $(SILENT) -rsi ${MP_CC_DIR}../ -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -omf=elf -x c -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/init_drv.o.d" -o ${OBJECTDIR}/init_drv.o init_drv.c    
 	
 else
-${OBJECTDIR}/lib/init_drv.o: lib/init_drv.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} "${OBJECTDIR}/lib" 
-	@${RM} ${OBJECTDIR}/lib/init_drv.o.d 
-	@${RM} ${OBJECTDIR}/lib/init_drv.o.ok ${OBJECTDIR}/lib/init_drv.o.err 
-	@${RM} ${OBJECTDIR}/lib/init_drv.o 
-	@${FIXDEPS} "${OBJECTDIR}/lib/init_drv.o.d" $(SILENT) -rsi ${MP_CC_DIR}../ -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -omf=elf -x c -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/lib/init_drv.o.d" -o ${OBJECTDIR}/lib/init_drv.o lib/init_drv.c    
-	
 ${OBJECTDIR}/main.o: main.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
 	@${RM} ${OBJECTDIR}/main.o.d 
@@ -142,12 +128,12 @@ ${OBJECTDIR}/main.o: main.c  nbproject/Makefile-${CND_CONF}.mk
 	@${RM} ${OBJECTDIR}/main.o 
 	@${FIXDEPS} "${OBJECTDIR}/main.o.d" $(SILENT) -rsi ${MP_CC_DIR}../ -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -omf=elf -x c -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/main.o.d" -o ${OBJECTDIR}/main.o main.c    
 	
-${OBJECTDIR}/W5300_Udp.o: W5300_Udp.c  nbproject/Makefile-${CND_CONF}.mk
+${OBJECTDIR}/init_drv.o: init_drv.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
-	@${RM} ${OBJECTDIR}/W5300_Udp.o.d 
-	@${RM} ${OBJECTDIR}/W5300_Udp.o.ok ${OBJECTDIR}/W5300_Udp.o.err 
-	@${RM} ${OBJECTDIR}/W5300_Udp.o 
-	@${FIXDEPS} "${OBJECTDIR}/W5300_Udp.o.d" $(SILENT) -rsi ${MP_CC_DIR}../ -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -omf=elf -x c -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/W5300_Udp.o.d" -o ${OBJECTDIR}/W5300_Udp.o W5300_Udp.c    
+	@${RM} ${OBJECTDIR}/init_drv.o.d 
+	@${RM} ${OBJECTDIR}/init_drv.o.ok ${OBJECTDIR}/init_drv.o.err 
+	@${RM} ${OBJECTDIR}/init_drv.o 
+	@${FIXDEPS} "${OBJECTDIR}/init_drv.o.d" $(SILENT) -rsi ${MP_CC_DIR}../ -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -omf=elf -x c -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/init_drv.o.d" -o ${OBJECTDIR}/init_drv.o init_drv.c    
 	
 endif
 

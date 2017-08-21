@@ -4,6 +4,7 @@
 *
 * Created on 2017년 6월 22일 (목), 오전 8:51
 */
+
 #include <p33FJ128GP310A.h> 
 
 #include <libpic30.h>
@@ -1221,7 +1222,7 @@ void MenuDisplay(void)
         }
           // </editor-fold>
     }
-    else if((PageValue.s_Fire[FIRE_TEST] == 1) )//&& (PageValue.s_Check[CHK_LAN]==1) // 발사 계통 점검 세부 메뉴 선택 1,2호탄 선택
+    	else if((PageValue.s_Fire[FIRE_TEST] == 1) )//&& (PageValue.s_Check[CHK_LAN]==1) // 발사 계통 점검 세부 메뉴 선택 1,2호탄 선택
 	{
 		if(ButtonValue.s_OkButton == 1)
 		{
@@ -1230,8 +1231,7 @@ void MenuDisplay(void)
 				// <editor-fold defaultstate="collapsed" desc="발사 계통 점검 세부 메뉴 선택">
 			case  0x01 :
 				printf("i MENU/FireEachTestMenu_1.png,0,0\r");                              // 1호탄 개별 점검
-				AlramPrint();
-                TestResultCheck(3);             // 점검 결과 체크 표시
+				TestResultCheck(3);             // 점검 결과 체크 표시
 				PageValue.s_Fire[FIRE_TEST_EACH_1] = 1;
 				PageValue.s_Fire[FIRE_TEST] = 0;
 				ButtonValue.s_OkButton = 0;       // 확인 버튼 초기화
@@ -1239,8 +1239,7 @@ void MenuDisplay(void)
 				break;
 			case  0x02 :
 				printf("i MENU/FireTotalTestMenu_1.png,0,0\r");                              // 1호탄 통합 점검
-				AlramPrint();
-                TestResultCheck(3);             // 점검 결과 체크 표시
+				TestResultCheck(3);             // 점검 결과 체크 표시
 				PageValue.s_Fire[FIRE_TEST_TOTAL_1] = 1;
 				PageValue.s_Fire[FIRE_TEST] = 0;
 				ButtonValue.s_OkButton = 0;
@@ -1248,8 +1247,7 @@ void MenuDisplay(void)
 				break;
 			case  0x03 :
 				printf("i MENU/FireEachTestMenu_2.png,0,0\r");                              // 2호탄 개별 점검
-				AlramPrint();
-                TestResultCheck(4);             // 점검 결과 체크 표시
+				TestResultCheck(4);             // 점검 결과 체크 표시
 				PageValue.s_Fire[FIRE_TEST_EACH_2] = 1;
 				PageValue.s_Fire[FIRE_TEST] = 0;
 				ButtonValue.s_OkButton = 0;
@@ -1257,8 +1255,7 @@ void MenuDisplay(void)
 				break;
 			case  0x04 :
 				printf("i MENU/FireTotalTestMenu_2.png,0,0\r");                              // 2호탄 통합 점검
-				AlramPrint();
-                TestResultCheck(4);             // 점검 결과 체크 표시
+				TestResultCheck(4);             // 점검 결과 체크 표시
 				PageValue.s_Fire[FIRE_TEST_TOTAL_2] = 1;
 				PageValue.s_Fire[FIRE_TEST] = 0;
 				ButtonValue.s_OkButton = 0;
@@ -1277,10 +1274,10 @@ void MenuDisplay(void)
 
 			PageValue.s_Fire[FIRE_TEST] = 0;    
 			PageValue.s_First[MODE_SEL] = 1;
-//			if(PageValue.s_Fire[FIRE_TEST_EACH_1] == 1)PageValue.s_Fire[FIRE_TEST_EACH_1] = 0;
-//			else if(PageValue.s_Fire[FIRE_TEST_TOTAL_1] == 1)PageValue.s_Fire[FIRE_TEST_TOTAL_1] = 0;
-//			else if(PageValue.s_Fire[FIRE_TEST_EACH_2] == 1)PageValue.s_Fire[FIRE_TEST_EACH_2] = 0;
-//			else if(PageValue.s_Fire[FIRE_TEST_TOTAL_2] == 1)PageValue.s_Fire[FIRE_TEST_TOTAL_2] = 0;
+			if(PageValue.s_Fire[FIRE_TEST_EACH_1] == 1)PageValue.s_Fire[FIRE_TEST_EACH_1] = 0;
+			else if(PageValue.s_Fire[FIRE_TEST_TOTAL_1] == 1)PageValue.s_Fire[FIRE_TEST_TOTAL_1] = 0;
+			else if(PageValue.s_Fire[FIRE_TEST_EACH_2] == 1)PageValue.s_Fire[FIRE_TEST_EACH_2] = 0;
+			else if(PageValue.s_Fire[FIRE_TEST_TOTAL_2] == 1)PageValue.s_Fire[FIRE_TEST_TOTAL_2] = 0;
 			ButtonValue.s_BackButton = 0;                  // 이전 버튼 토글(초기화)
 			g_InputValue = 0;
             // </editor-fold>
@@ -2103,3 +2100,4 @@ int main(void)
     }
 	return(0);
 }
+//:DONE:

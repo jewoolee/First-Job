@@ -1,4 +1,4 @@
-Microchip Technology Inc, vv3_31 (A) {
+Microchip Technology Inc, vv3_31 (A) v
 
 Tool Name:
   c:\program files (x86)\microchip\mplab c30\bin\bin\..\bin/pic30-elf-ld.exe
@@ -21,9 +21,8 @@ Command:
   -Lc:/program files (x86)/microchip/mplab c30/bin/bin/../../support/dsPIC33E/gld \
   -Lc:/program files (x86)/microchip/mplab c30/bin/bin/../../lib/dsPIC33F \
   -Lc:/program files (x86)/microchip/mplab c30/bin/bin/../../support/dsPIC33F/gld \
-  build/default/production/lib/init_drv.o \
   build/default/production/main.o \
-  build/default/production/W5300_Udp.o \
+  build/default/production/init_drv.o \
   --defsym=__MPLAB_BUILD=1 \
   -Map=dist/default/production/T3 ECTS_0818.X.production.map \
   -Tp33FJ128GP310A.gld.00 \
@@ -135,11 +134,11 @@ section                    address   length (PC units)   length (bytes) (dec)
 -------                    -------   -----------------   --------------------
 .text                        0x200              0x17d6          0x23c1  (9153)
 .const                      0x19d6               0x704           0xa86  (2694)
-.text                       0x20da              0x25b2          0x388b  (14475)
-.dinit                      0x468c               0x1e0           0x2d0  (720)
-.text                       0x486c               0x1b4           0x28e  (654)
+.text                       0x20da              0x25d8          0x38c4  (14532)
+.dinit                      0x46b2               0x1e0           0x2d0  (720)
+.text                       0x4892               0x1b4           0x28e  (654)
 
-                     Total program memory used (bytes):         0x6c30  (27696) 21%
+                     Total program memory used (bytes):         0x6c69  (27753) 21%
 
 
 Data Memory  [Origin = 0x800, Length = 0x4000]
@@ -327,14 +326,14 @@ External Symbols in Program Memory (by address):
                   0x003396                  _ReadADC7980
                   0x0033c2                  _ReadADCValue
                   0x003480                  _MenuDisplay
-                  0x004656                  _main
-                  0x00486c                  _InitGPIO
-                  0x0048aa                  _InitTimer1
-                  0x0048da                  _InitTimer2
-                  0x004908                  _InitUart1
-                  0x004946                  _InitAdc
-                  0x0049a2                  _InitSpi1
-                  0x0049dc                  _InitInterrupt
+                  0x00467c                  _main
+                  0x004892                  _InitGPIO
+                  0x0048d0                  _InitTimer1
+                  0x004900                  _InitTimer2
+                  0x00492e                  _InitUart1
+                  0x00496c                  _InitAdc
+                  0x0049c8                  _InitSpi1
+                  0x004a02                  _InitInterrupt
 
 External Symbols in Program Memory (by name):
 
@@ -342,14 +341,14 @@ External Symbols in Program Memory (by name):
                   0x002316                  _ButtonPrintValue
                   0x0020ce                  _ChipSelectParam
                   0x0020bc                  _IOPortSelectParam
-                  0x004946                  _InitAdc
-                  0x00486c                  _InitGPIO
-                  0x0049dc                  _InitInterrupt
+                  0x00496c                  _InitAdc
+                  0x004892                  _InitGPIO
+                  0x004a02                  _InitInterrupt
                   0x002cbc                  _InitRelay
-                  0x0049a2                  _InitSpi1
-                  0x0048aa                  _InitTimer1
-                  0x0048da                  _InitTimer2
-                  0x004908                  _InitUart1
+                  0x0049c8                  _InitSpi1
+                  0x0048d0                  _InitTimer1
+                  0x004900                  _InitTimer2
+                  0x00492e                  _InitUart1
                   0x00292c                  _InitValue
                   0x00250a                  _InnerVoltTest
                   0x002f6c                  _InsulationTest
@@ -432,7 +431,7 @@ External Symbols in Program Memory (by name):
                   0x000672                  __vfprintf_cdnopuxX
                   0x00155a                  _frexpf
                   0x0019d6                  _g_Error
-                  0x004656                  _main
+                  0x00467c                  _main
                   0x0005a8                  _memset
 
 Memory Configuration
@@ -460,9 +459,8 @@ FUID3            0xf80016           0x000002
 
 Linker script and memory map
 
-LOAD build/default/production/lib/init_drv.o
 LOAD build/default/production/main.o
-LOAD build/default/production/W5300_Udp.o
+LOAD build/default/production/init_drv.o
                     0x0001                  __MPLAB_BUILD = 0x1
 LOAD c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib/dsPIC33F\libp33FJ128GP310A-elf.a
                     0xf80000                  __FBS = 0xf80000
@@ -678,40 +676,38 @@ __FUID3
 .comment
  *(.comment)
 
-.debug_info       0x000000       0x4895
+.debug_info       0x000000       0x4891
  *(.debug_info)
- .debug_info      0x000000       0x2532 build/default/production/lib/init_drv.o
- .debug_info      0x002532       0x1adc build/default/production/main.o
- .debug_info      0x00400e        0x7c6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(write.eo)
- .debug_info      0x0047d4         0xc1 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(c30_uart.eo)
+ .debug_info      0x000000       0x1adc build/default/production/main.o
+ .debug_info      0x001adc       0x252e build/default/production/init_drv.o
+ .debug_info      0x00400a        0x7c6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(write.eo)
+ .debug_info      0x0047d0         0xc1 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(c30_uart.eo)
  *(.gnu.linkonce.wi.*)
 
-.debug_abbrev     0x000000        0x4ed
+.debug_abbrev     0x000000        0x4ec
  *(.debug_abbrev)
- .debug_abbrev    0x000000        0x113 build/default/production/lib/init_drv.o
- .debug_abbrev    0x000113        0x233 build/default/production/main.o
- .debug_abbrev    0x000346          0x1 build/default/production/W5300_Udp.o
- .debug_abbrev    0x000347        0x176 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(write.eo)
- .debug_abbrev    0x0004bd         0x30 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(c30_uart.eo)
+ .debug_abbrev    0x000000        0x233 build/default/production/main.o
+ .debug_abbrev    0x000233        0x113 build/default/production/init_drv.o
+ .debug_abbrev    0x000346        0x176 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(write.eo)
+ .debug_abbrev    0x0004bc         0x30 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(c30_uart.eo)
 
-.debug_line       0x000000       0x2ff4
+.debug_line       0x000000       0x2fcc
  *(.debug_line)
- .debug_line      0x000000        0x428 build/default/production/lib/init_drv.o
- .debug_line      0x000428       0x2a06 build/default/production/main.o
- .debug_line      0x002e2e         0x24 build/default/production/W5300_Udp.o
- .debug_line      0x002e52        0x170 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(write.eo)
- .debug_line      0x002fc2         0x32 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(c30_uart.eo)
+ .debug_line      0x000000       0x2a06 build/default/production/main.o
+ .debug_line      0x002a06        0x424 build/default/production/init_drv.o
+ .debug_line      0x002e2a        0x170 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(write.eo)
+ .debug_line      0x002f9a         0x32 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(c30_uart.eo)
 
 .debug_frame      0x000000       0x1995
  *(.debug_frame)
- .debug_frame     0x000000         0x87 build/default/production/lib/init_drv.o
- .debug_frame     0x000087       0x18e7 build/default/production/main.o
+ .debug_frame     0x000000       0x18e7 build/default/production/main.o
+ .debug_frame     0x0018e7         0x87 build/default/production/init_drv.o
  .debug_frame     0x00196e         0x27 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(write.eo)
 
 .debug_str        0x000000         0x69
  *(.debug_str)
- .debug_str       0x000000          0xd build/default/production/lib/init_drv.o
- .debug_str       0x00000d         0x41 build/default/production/main.o
+ .debug_str       0x000000         0x41 build/default/production/main.o
+ .debug_str       0x000041          0xd build/default/production/init_drv.o
  .debug_str       0x00004e         0x1b c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(write.eo)
 
 .debug_loc
@@ -724,9 +720,9 @@ __FUID3
                   0x000000        0x49a
  *(.debug_pubnames)
  .debug_pubnames
-                  0x000000         0xb5 build/default/production/lib/init_drv.o
+                  0x000000        0x3a8 build/default/production/main.o
  .debug_pubnames
-                  0x0000b5        0x3a8 build/default/production/main.o
+                  0x0003a8         0xb5 build/default/production/init_drv.o
  .debug_pubnames
                   0x00045d         0x1c c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(write.eo)
  .debug_pubnames
@@ -738,9 +734,9 @@ __FUID3
 .debug_aranges    0x000000         0x68
  *(.debug_aranges)
  .debug_aranges
-                  0x000000         0x20 build/default/production/lib/init_drv.o
+                  0x000000         0x20 build/default/production/main.o
  .debug_aranges
-                  0x000020         0x20 build/default/production/main.o
+                  0x000020         0x20 build/default/production/init_drv.o
  .debug_aranges
                   0x000040         0x28 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(write.eo)
 
@@ -1812,101 +1808,99 @@ LOAD default_isr
 LOAD data_init
 
 __c30_signature
-                  0x000068        0x11a
+                  0x000068        0x114
  __c30_signature
-                  0x000068          0x6 build/default/production/lib/init_drv.o
+                  0x000068          0x6 build/default/production/main.o
  __c30_signature
-                  0x00006e          0x6 build/default/production/main.o
+                  0x00006e          0x6 build/default/production/init_drv.o
  __c30_signature
-                  0x000074          0x6 build/default/production/W5300_Udp.o
+                  0x000074          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib/dsPIC33F\libp33FJ128GP310A-elf.a(ReadUART1.o)
  __c30_signature
-                  0x00007a          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib/dsPIC33F\libp33FJ128GP310A-elf.a(ReadUART1.o)
+                  0x00007a          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(crt0_standard.o)
  __c30_signature
-                  0x000080          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(crt0_standard.o)
+                  0x000080          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(data_init_standard.o)
  __c30_signature
-                  0x000086          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(data_init_standard.o)
+                  0x000086          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(addsf3.eo)
  __c30_signature
-                  0x00008c          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(addsf3.eo)
+                  0x00008c          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(divsf3.eo)
  __c30_signature
-                  0x000092          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(divsf3.eo)
+                  0x000092          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(feqltle.eo)
  __c30_signature
-                  0x000098          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(feqltle.eo)
+                  0x000098          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(fgtge.eo)
  __c30_signature
-                  0x00009e          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(fgtge.eo)
+                  0x00009e          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(floatsisf.eo)
  __c30_signature
-                  0x0000a4          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(floatsisf.eo)
+                  0x0000a4          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(fpack.eo)
  __c30_signature
-                  0x0000aa          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(fpack.eo)
+                  0x0000aa          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(funpack2.eo)
  __c30_signature
-                  0x0000b0          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(funpack2.eo)
+                  0x0000b0          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(futil.eo)
  __c30_signature
-                  0x0000b6          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(futil.eo)
+                  0x0000b6          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(mulsf3.eo)
  __c30_signature
-                  0x0000bc          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(mulsf3.eo)
+                  0x0000bc          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(udivsi3.eo)
  __c30_signature
-                  0x0000c2          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(udivsi3.eo)
+                  0x0000c2          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(fcompare.eo)
  __c30_signature
-                  0x0000c8          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(fcompare.eo)
+                  0x0000c8          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(funpack.eo)
  __c30_signature
-                  0x0000ce          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(funpack.eo)
+                  0x0000ce          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(memset.XXeo)
  __c30_signature
-                  0x0000d4          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(memset.XXeo)
+                  0x0000d4          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(printf_cdfFnopuxX.XXeo)
  __c30_signature
-                  0x0000da          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(printf_cdfFnopuxX.XXeo)
+                  0x0000da          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(_iob.XXeo)
  __c30_signature
-                  0x0000e0          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(_iob.XXeo)
+                  0x0000e0          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(doprnt_cdfFnopuxX.XXeo)
  __c30_signature
-                  0x0000e6          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(doprnt_cdfFnopuxX.XXeo)
+                  0x0000e6          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(fputc.XXelo)
  __c30_signature
-                  0x0000ec          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(fputc.XXelo)
+                  0x0000ec          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(powers.XXelo)
  __c30_signature
-                  0x0000f2          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(powers.XXelo)
+                  0x0000f2          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(flsbuf.XXeo)
  __c30_signature
-                  0x0000f8          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(flsbuf.XXeo)
+                  0x0000f8          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(write.eo)
  __c30_signature
-                  0x0000fe          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(write.eo)
+                  0x0000fe          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(c30_uart.eo)
  __c30_signature
-                  0x000104          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(c30_uart.eo)
+                  0x000104          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(adddf3.eo)
  __c30_signature
-                  0x00010a          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(adddf3.eo)
+                  0x00010a          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(deqltle.eo)
  __c30_signature
-                  0x000110          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(deqltle.eo)
+                  0x000110          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(dgtge.eo)
  __c30_signature
-                  0x000116          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(dgtge.eo)
+                  0x000116          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(divdf3.eo)
  __c30_signature
-                  0x00011c          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(divdf3.eo)
+                  0x00011c          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(dne.eo)
  __c30_signature
-                  0x000122          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(dne.eo)
+                  0x000122          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(dpack.eo)
  __c30_signature
-                  0x000128          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(dpack.eo)
+                  0x000128          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(dunpack2.eo)
  __c30_signature
-                  0x00012e          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(dunpack2.eo)
+                  0x00012e          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(extendsfdf.eo)
  __c30_signature
-                  0x000134          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(extendsfdf.eo)
+                  0x000134          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(fixunsdfdi.eo)
  __c30_signature
-                  0x00013a          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(fixunsdfdi.eo)
+                  0x00013a          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(floatdidf.eo)
  __c30_signature
-                  0x000140          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(floatdidf.eo)
+                  0x000140          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(frexpf.eo)
  __c30_signature
-                  0x000146          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(frexpf.eo)
+                  0x000146          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(muldf3.eo)
  __c30_signature
-                  0x00014c          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(muldf3.eo)
+                  0x00014c          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(subdf3.eo)
  __c30_signature
-                  0x000152          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(subdf3.eo)
+                  0x000152          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(truncdfsf.eo)
  __c30_signature
-                  0x000158          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(truncdfsf.eo)
+                  0x000158          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(divmoddi3.eo)
  __c30_signature
-                  0x00015e          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(divmoddi3.eo)
+                  0x00015e          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(_frexpf.eo)
  __c30_signature
-                  0x000164          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(_frexpf.eo)
+                  0x000164          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(dcompare.eo)
  __c30_signature
-                  0x00016a          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(dcompare.eo)
+                  0x00016a          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(dpropagateNaN.eo)
  __c30_signature
-                  0x000170          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(dpropagateNaN.eo)
+                  0x000170          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(dtype.eo)
  __c30_signature
-                  0x000176          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(dtype.eo)
- __c30_signature
-                  0x00017c          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(dunpack.eo)
+                  0x000176          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(dunpack.eo)
 
 .nbss               0x0800        0x32a
  .nbss              0x0800        0x32a build/default/production/main.o
@@ -1965,13 +1959,13 @@ __c30_signature
 .const              0x99d6        0x704 load address 0x0019d6  
  .const             0x99d6        0x6dc build/default/production/main.o
                     0x99d6                  _g_Error
- .const             0xa0b2         0x28 build/default/production/lib/init_drv.o
+ .const             0xa0b2         0x28 build/default/production/init_drv.o
                     0xa0b2                  _RelaySelectParam
                     0xa0bc                  _IOPortSelectParam
                     0xa0ce                  _ChipSelectParam
 
-.text             0x0020da       0x25b2
- .text            0x0020da       0x25b2 build/default/production/main.o
+.text             0x0020da       0x25d8
+ .text            0x0020da       0x25d8 build/default/production/main.o
                   0x0020da                  __U1RXInterrupt
                   0x00213e                  __T1Interrupt
                   0x00217a                  __T2Interrupt
@@ -1998,17 +1992,17 @@ __c30_signature
                   0x003396                  _ReadADC7980
                   0x0033c2                  _ReadADCValue
                   0x003480                  _MenuDisplay
-                  0x004656                  _main
+                  0x00467c                  _main
 
-.dinit            0x00468c        0x1e0
- .dinit           0x00468c        0x1e0 data_init
+.dinit            0x0046b2        0x1e0
+ .dinit           0x0046b2        0x1e0 data_init
 
-.text             0x00486c        0x1b4
- .text            0x00486c        0x1b4 build/default/production/lib/init_drv.o
-                  0x00486c                  _InitGPIO
-                  0x0048aa                  _InitTimer1
-                  0x0048da                  _InitTimer2
-                  0x004908                  _InitUart1
-                  0x004946                  _InitAdc
-                  0x0049a2                  _InitSpi1
-                  0x0049dc                  _InitInterrupt
+.text             0x004892        0x1b4
+ .text            0x004892        0x1b4 build/default/production/init_drv.o
+                  0x004892                  _InitGPIO
+                  0x0048d0                  _InitTimer1
+                  0x004900                  _InitTimer2
+                  0x00492e                  _InitUart1
+                  0x00496c                  _InitAdc
+                  0x0049c8                  _InitSpi1
+                  0x004a02                  _InitInterrupt
