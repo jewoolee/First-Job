@@ -44,16 +44,20 @@ void ReadADCValue(unsigned int AverageCount);
 void AlramPrint();
 void UdpSetting();
 void SendData(unsigned int Name);
-unsigned char     socket(  unsigned char  protocol,  unsigned short port,  unsigned short mode);
-void     close();
-unsigned long   sendto( unsigned char  * buf, unsigned long len,  unsigned char  * addr,  unsigned short port);
-unsigned long   recvfrom( unsigned char  * buf, unsigned long len,  unsigned char  * addr,  unsigned short  *port);
-void     loopback_udp(  unsigned short port,   unsigned short mode);
+void RecvDataParsing(unsigned int Name);
+void RecvDataSort(unsigned int Name, unsigned int Num);
+unsigned char socket(  unsigned char protocol, unsigned short port, unsigned short mode);
+void close();
+unsigned long sendto(unsigned char* buf, unsigned long len, unsigned char* addr, unsigned short port);
+unsigned long recvfrom(unsigned char* buf, unsigned long len, unsigned char* addr, unsigned short *port);
+void loopback_udp(unsigned short port, unsigned short mode);
 // 인터럽트 선언 부************************************************
 void __attribute__((interrupt, auto_psv)) _U1RXInterrupt(void);
 void __attribute__((interrupt, auto_psv)) _T1Interrupt(void);
 void __attribute__((interrupt, auto_psv)) _T2Interrupt(void);
-
+void __attribute__ ((interrupt, no_auto_psv)) _INT0Interrupt(void);
+void __attribute__ ((interrupt, no_auto_psv)) _INT1Interrupt(void);
+void __attribute__ ((interrupt, no_auto_psv)) _INT2Interrupt(void);
 //****************************************************************
 // <editor-fold defaultstate="collapsed" desc="열거형선언">
 enum { MODE_SEL, VOLT_ERR}; // 2 모드 화면, 에러 화면
@@ -65,11 +69,21 @@ enum { LINE_RES_ING, LINE_SHO_ING, LINE_INS_ING, LINE_RES_RESULT, LINE_SHO_RESUL
 enum { LINE_TEST, LINE_RES_TEST, LINE_SHO_TEST, LINE_INS_TEST}; // 5
 enum { FIRE_TEST, FIRE_TEST_EACH_1, FIRE_TEST_TOTAL_1, FIRE_TEST_EACH_2, FIRE_TEST_TOTAL_2 }; // 6
 enum { MSL_RESULT, EXT_RESULT, EB_RESULT, BAT_RESULT, ABAT_RESULT, BDU_RESULT, ARMING_RESULT, INTARM_RESULT, INT_RESULT}; //9
+enum { CON, MSL, EXT, EB, BAT, ABAT, BDU, ARMING, INTARM, INT}; //9
 enum { RESULT,DC_VREF, DC5V, DC12V_PLUS, DC12V_MINUS};//enum { RESULT,DC_VREF, DC3V, DC5V, DC12V_PLUS, DC12V_MINUS};
 enum { A0, A1, A2, CLEAR}; // 어드레스 제어
 enum { SEL_ADC, SEL_LED, SEL_DATA, SEL_ADDRESS, SEL_RELAY01, SEL_LEDADC};   // CS 선택
 enum { RESIDUAL, SHORT, INSULATION};    // 잔류, 도통/단선, 절연
 enum { RESIDUAL_RELAY, INSUL_RELAY, OK_LED, INSUL_LED, INTEGRATION_LED, SP_LED, SHORT_LED, RESIDUAL_VOLT_LED};
+enum { FIRST, SECOND } ;
+enum { EB1_SQUIB1, EB1_SQUIB2, EB2_SQUIB1, EB2_SQUIB2, EB_STATUS };
+enum { BAT1_SQUIB1, BAT1_SQUIB2, BAT2_SQUIB1, BAT2_SQUIB2, BAT_STATUS };
+enum { ABAT1_SQUIB1, ABAT1_SQUIB2, ABAT2_SQUIB1, ABAT2_SQUIB2, ABAT_STATUS };
+enum { BDU_SQUIB1, BDU_SQUIB2, BDU_STATUS };
+enum { INT_SQUIB1, INT_SQUIB2, INT_STATUS };
+enum { FAIL, GOOD_1 };
+enum { NONE, OFF_1, ON_2 } ;
+enum { CON_ACK, FIRE_ACK };
 // </editor-fold>
 // 전역 변수 선언************************
 unsigned char g_RxBuffer[100];
@@ -86,9 +100,9 @@ unsigned int g_TimerCount=0;
 unsigned int g_OkButtonTimerCount =0;
 unsigned int g_OkButtonTimerCountPre =0;
 unsigned int g_TimerCounter =0;
-unsigned short g_DataBuffer[6]={0,};  // 16비트만 저장
-unsigned short g_TempBuffer[6]={0,};    // 16비트만 저장
-
+unsigned short g_DataBuffer[7]={0,};  // 16비트만 저장
+unsigned short g_TempBuffer[7]={0,};    // 16비트만 저장
+unsigned int g_TotalSel = 0 ; // 통합점검 순서
 int g_Sw[7]={0};
 
 int g_SwSum =0;
@@ -135,7 +149,6 @@ struct CONNECTCHECK{
 	unsigned int s_LchrId;
 	unsigned int s_McuId;
 }ConnectCheck;
-
 struct CONNECTCHECKACK{
 	unsigned int s_Opcode;
 	unsigned int s_Repeat;
@@ -145,7 +158,6 @@ struct CONNECTCHECKACK{
 	unsigned int s_LchrId;
 	unsigned int s_McuId;
 }ConnectCheckAck;
-
 struct FIRETESTCHECK{
 	unsigned int s_Opcode;
 	unsigned int s_Repeat;
@@ -165,7 +177,6 @@ struct FIRETESTCHECK{
 	unsigned int s_INTARM;
 	unsigned int s_INTSQUIB;
 }FireTestCheck;
-
 struct FIRETESTCHECKRESULT{
 	unsigned int s_Opcode;
 	unsigned int s_Repeat;
@@ -177,14 +188,68 @@ struct FIRETESTCHECKRESULT{
 	unsigned int s_MSLPWR;
 	unsigned int s_EXTPWR;
 	unsigned int s_EBSQUIB;
+	struct EBSQUIB EB;
 	unsigned int s_BATSQUIB;
+	struct BATSQUIB BAT;
 	unsigned int s_ABATSQUIB;
+	struct ABATSQUIB ABAT;
 	unsigned int s_BDUSQUIB;
+	struct BDUSQUIB BDU;
 	unsigned int s_ARMING;
 	unsigned int s_INTARM;
 	unsigned int s_INTSQUIB;
+	struct INTSQUIB INT;
 }FireTestCheckResult;
+struct EBSQUIB
+{
+	unsigned int s_Status;
+	unsigned int s_EB2SQUIB2;
+	unsigned int s_EB2SQUIB1;
+	unsigned int s_EB1SQUIB2;
+	unsigned int s_EB1SQUIB1;
 
+};
+struct BATSQUIB
+{
+	unsigned int s_Status;
+	unsigned int s_BAT2SQUIB2;
+	unsigned int s_BAT2SQUIB1;
+	unsigned int s_BAT1SQUIB2;
+	unsigned int s_BAT1SQUIB1;
+
+};
+struct ABATSQUIB
+{
+	unsigned int s_Status;
+	unsigned int s_ABAT2SQUIB2;
+	unsigned int s_ABAT2SQUIB1;
+	unsigned int s_ABAT1SQUIB2;
+	unsigned int s_ABAT1SQUIB1;
+
+};
+struct BDUSQUIB
+{
+	unsigned int s_Status;
+	unsigned int s_BDUSQUIB2;
+	unsigned int s_BDUSQUIB1;
+};
+struct INTSQUIB
+{
+	unsigned int s_Status;
+	unsigned int s_INTSQUIB2;
+	unsigned int s_INTSQUIB1;
+};
+struct FIRESTATUS{
+	unsigned char s_MSL[2];
+	unsigned char s_EXT[2];
+	unsigned char s_EB[2][6];
+	unsigned char s_BAT[2][6];
+	unsigned char s_ABAT[2][6];
+	unsigned char s_BDU[2][6];
+	unsigned char s_ARMING[2];
+	unsigned char s_INTARM[2];
+	unsigned char s_INT[2][6];
+}FireStatus;
 // </editor-fold>
 //***************************************
 void __attribute__((interrupt, auto_psv)) _U1RXInterrupt(void)
@@ -243,6 +308,22 @@ void __attribute__((interrupt, auto_psv)) _T2Interrupt(void)
 	//            printf("f 안누름 : %d,140,200\r",g_OkButtonTimerCountPre);
 
 
+}
+void __attribute__ ((interrupt, no_auto_psv)) _INT0Interrupt(void)
+{
+    loopback_udp(3000,0); // 메시지 전송 및 수신 동작이라 가정하고
+	if(PageValue.s_Fire[FIRE_TEST_TOTAL_1]==1)
+    {
+        if(g_TotalSel == 10) g_TotalSel = 0;
+        g_TotalSel+=1;// 수신 완료되었을경우 값을 1씩 증가 시킨다.
+    }
+    else if(PageValue.s_Fire[FIRE_TEST_TOTAL_2]==1)
+    {
+        if(g_TotalSel == 10) g_TotalSel = 0;
+        g_TotalSel+=1;// 수신 완료되었을경우 값을 1씩 증가 시킨다.
+    }
+    
+	IFS0bits.INT0IF = 0;		// INT0 Interrupt Flag Clear;
 }
 void __attribute__ ((interrupt, no_auto_psv)) _INT1Interrupt(void)
 {
@@ -548,7 +629,9 @@ void InnerVoltTest(void)      // 내부 전원 점검 (완료 vref. 5v, +15v, -15v 정상�
 
 			//통신점검 메시지 날리는 함수 
 			SendData(0); // 통신점검 메시지 g_DataBuffer 설정
-			loopback_udp(3000,0); // 랜 연결확인
+            // 인터럽트 0번 동작
+            // 점검 메시지 전송, 수신 결과 확인
+            if(PageValue.s_Check[CHK_LAN] == 1) printf("i ETC/LanConnect.png,165,0\r"); // 랜 연결상태가 정상일경우 랜 알람 메시지 출력
 		}
 
 	}
@@ -1381,65 +1464,119 @@ void MenuDisplay(void)
 			switch(g_InputValue)
 			{
 			case 1:
-				PageValue.s_FireRecvResult_1[MSL_RESULT] = 1; // 유도탄 전원 수신 확인
-				TestResultCheck(3);         // 점검 결과 표시
+                SendData(MSL);  // 전송할 메시지 변수 저장
+                //인터럽트0번 동작
+                    // 메시지 전송하고 수신하면 인터럽트 0번 종료
+                if(FireStatus.s_MSL >= 0) // 데이터가 수신이 되었으면 메시지에 들어있는 값은 0보다 크거나 같다
+                {
+                    PageValue.s_FireRecvResult_1[MSL_RESULT] = 1;  // 수신완료 플래그 설정하고
+                    TestResultCheck(3);         // 점검 결과 표시
+                }
 				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 2:
-				PageValue.s_FireRecvResult_1[EXT_RESULT] = 1; // 유도탄 전원 수신 확인
-				TestResultCheck(3);
+                 SendData(EXT);  // 전송할 메시지 변수 저장
+                //인터럽트0번 동작
+                    // 메시지 전송하고 수신하면 인터럽트 0번 종료
+                if(FireStatus.s_EXT >= 0) // 데이터가 수신이 되었으면 메시지에 들어있는 값은 0보다 크거나 같다
+                {
+                    PageValue.s_FireRecvResult_1[EXT_RESULT] = 1;  // 수신완료 플래그 설정하고
+                    TestResultCheck(3);         // 점검 결과 표시
+                }
+			
 				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 3:
-
-				PageValue.s_FireRecvResult_1[EB_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(3);
+                SendData(EB);  // 전송할 메시지 변수 저장
+                //인터럽트0번 동작
+                    // 메시지 전송하고 수신하면 인터럽트 0번 종료
+				 if(FireStatus.s_EB >= 0) // 데이터가 수신이 되었으면 메시지에 들어있는 값은 0보다 크거나 같다
+                {
+                    PageValue.s_FireRecvResult_1[EB_RESULT] = 1;  // 수신완료 플래그 설정하고
+                    TestResultCheck(3);         // 점검 결과 표시
+                }
 				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 4:
-				PageValue.s_FireRecvResult_1[BAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(3);
+                 SendData(BAT);  // 전송할 메시지 변수 저장
+                //인터럽트0번 동작
+                    // 메시지 전송하고 수신하면 인터럽트 0번 종료
+				 if(FireStatus.s_BAT >= 0) // 데이터가 수신이 되었으면 메시지에 들어있는 값은 0보다 크거나 같다
+                {
+                    PageValue.s_FireRecvResult_1[BAT_RESULT] = 1;  // 수신완료 플래그 설정하고
+                    TestResultCheck(3);         // 점검 결과 표시
+                }
 				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 5:
-				PageValue.s_FireRecvResult_1[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(3);
+                 SendData(ABAT);  // 전송할 메시지 변수 저장
+                //인터럽트0번 동작
+                    // 메시지 전송하고 수신하면 인터럽트 0번 종료
+			 if(FireStatus.s_ABAT >= 0) // 데이터가 수신이 되었으면 메시지에 들어있는 값은 0보다 크거나 같다
+                {
+                    PageValue.s_FireRecvResult_1[ABAT_RESULT] = 1;  // 수신완료 플래그 설정하고
+                    TestResultCheck(3);         // 점검 결과 표시
+                }
 				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 6:
-				PageValue.s_FireRecvResult_1[BDU_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(3);
+                 SendData(BDU);  // 전송할 메시지 변수 저장
+                //인터럽트0번 동작
+                    // 메시지 전송하고 수신하면 인터럽트 0번 종료
+				 if(FireStatus.s_BDU >= 0) // 데이터가 수신이 되었으면 메시지에 들어있는 값은 0보다 크거나 같다
+                {
+                    PageValue.s_FireRecvResult_1[BDU_RESULT] = 1;  // 수신완료 플래그 설정하고
+                    TestResultCheck(3);         // 점검 결과 표시
+                }
 				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 7:
-				PageValue.s_FireRecvResult_1[ARMING_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(3);
+                 SendData(ARMING);  // 전송할 메시지 변수 저장
+                //인터럽트0번 동작
+                    // 메시지 전송하고 수신하면 인터럽트 0번 종료
+			 if(FireStatus.s_ARMING >= 0) // 데이터가 수신이 되었으면 메시지에 들어있는 값은 0보다 크거나 같다
+                {
+                    PageValue.s_FireRecvResult_1[ARMING_RESULT] = 1;  // 수신완료 플래그 설정하고
+                    TestResultCheck(3);         // 점검 결과 표시
+                }
 				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 8:
-				PageValue.s_FireRecvResult_1[INTARM_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(3);
+                 SendData(INTARM);  // 전송할 메시지 변수 저장
+                //인터럽트0번 동작
+                    // 메시지 전송하고 수신하면 인터럽트 0번 종료
+			 if(FireStatus.s_INTARM >= 0) // 데이터가 수신이 되었으면 메시지에 들어있는 값은 0보다 크거나 같다
+                {
+                    PageValue.s_FireRecvResult_1[INTARM_RESULT] = 1;  // 수신완료 플래그 설정하고
+                    TestResultCheck(3);         // 점검 결과 표시
+                }
 				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
 				break;
 			case 9:
-				PageValue.s_FireRecvResult_1[INT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(3);
+                 SendData(INT);  // 전송할 메시지 변수 저장
+                //인터럽트0번 동작
+                    // 메시지 전송하고 수신하면 인터럽트 0번 종료
+               if(FireStatus.s_INT >= 0) // 데이터가 수신이 되었으면 메시지에 들어있는 값은 0보다 크거나 같다
+                {
+                    PageValue.s_FireRecvResult_1[INT_RESULT] = 1;  // 수신완료 플래그 설정하고
+                    TestResultCheck(3);         // 점검 결과 표시
+                }
 				ButtonValue.s_OkButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 1;
@@ -1453,10 +1590,10 @@ void MenuDisplay(void)
 			switch(g_InputValue)
 			{
 			case 1:
+             
 				printf("i Result/MSLEXTPWR.png,0,0\r");
+                RecvDataSort(MSL,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				AlramPrint();
-
-				PageValue.s_FireDetailResult_1[MSL_RESULT] = 1;
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1464,7 +1601,7 @@ void MenuDisplay(void)
 			case 2:
 				printf("i Result/TESTEXTPWR.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_1[EXT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
+				 RecvDataSort(EXT,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1473,7 +1610,7 @@ void MenuDisplay(void)
 			case 3:
 				printf("i Result/EBSQB.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_1[EB_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
+				 RecvDataSort(EB,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1481,7 +1618,7 @@ void MenuDisplay(void)
 			case 4:
 				printf("i Result/BATSQB.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_1[BAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
+				 RecvDataSort(BAT,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1490,7 +1627,7 @@ void MenuDisplay(void)
 			case 5:
 				printf("i Result/ABATSQB.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_1[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
+				 RecvDataSort(ABAT,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1498,7 +1635,7 @@ void MenuDisplay(void)
 			case 6:
 				printf("i Result/BDUSQB.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_1[BDU_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
+				 RecvDataSort(BDU,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1507,7 +1644,7 @@ void MenuDisplay(void)
 			case 7:
 				printf("i Result/ARMING.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_1[ARMING_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
+				 RecvDataSort(ARMING,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1515,7 +1652,7 @@ void MenuDisplay(void)
 			case 8:
 				printf("i Result/INTARMING.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_1[INTARM_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
+			 RecvDataSort(INTARM,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1524,7 +1661,7 @@ void MenuDisplay(void)
 			case 9:
 				printf("i Result/INTSQB.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_1[INT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
+                 RecvDataSort(INT,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1574,86 +1711,110 @@ void MenuDisplay(void)
 		// <editor-fold defaultstate="collapsed" desc="1호탄 통합 점검">
 		if(ButtonValue.s_OkButton == 1)
 		{
-			// <editor-fold defaultstate="collapsed" desc="1호탄 통합 점검">
-			switch(g_InputValue)
+            	// <editor-fold defaultstate="collapsed" desc="1호탄 통합 점검">
+            // 1호탄 통합 점검 시작 화면 출력
+			switch(g_TotalSel)
 			{
 			case 1:
-				PageValue.s_FireRecvResult_1[MSL_RESULT] = 1; // 유도탄 전원 수신 확인
-				TestResultCheck(3);         // 점검 결과 표시
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
+                 // MSL 메시지 전송중 화면 출력
+                SendData(MSL);  // 전송할 메시지 변수 저장
+                //인터럽트0번 동작
+                    // 메시지 전송하고 수신하면 인터럽트 0번 종료
+                if(FireStatus.s_MSL >= 0) // 데이터가 수신이 되었으면 메시지에 들어있는 값은 0보다 크거나 같다
+                {
+                    PageValue.s_FireRecvResult_1[MSL_RESULT] = 1;  // 수신완료 플래그 설정하고
+                     // MSL 메시지 수신완료 화면 출력
+                }
 				break;
 			case 2:
-				PageValue.s_FireRecvResult_1[EXT_RESULT] = 1; // 유도탄 전원 수신 확인
-				TestResultCheck(3);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
+                 SendData(EXT);  // 전송할 메시지 변수 저장
+                //인터럽트0번 동작
+                    // 메시지 전송하고 수신하면 인터럽트 0번 종료
+                if(FireStatus.s_EXT >= 0) // 데이터가 수신이 되었으면 메시지에 들어있는 값은 0보다 크거나 같다
+                {
+                    PageValue.s_FireRecvResult_1[EXT_RESULT] = 1;  // 수신완료 플래그 설정하고
+                }
 				break;
 			case 3:
-
-				PageValue.s_FireRecvResult_1[EB_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(3);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
+                SendData(EB);  // 전송할 메시지 변수 저장
+                //인터럽트0번 동작
+                    // 메시지 전송하고 수신하면 인터럽트 0번 종료
+				 if(FireStatus.s_EB >= 0) // 데이터가 수신이 되었으면 메시지에 들어있는 값은 0보다 크거나 같다
+                {
+                    PageValue.s_FireRecvResult_1[EB_RESULT] = 1;  // 수신완료 플래그 설정하고
+                }
 				break;
 			case 4:
-				PageValue.s_FireRecvResult_1[BAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(3);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
+                 SendData(BAT);  // 전송할 메시지 변수 저장
+                //인터럽트0번 동작
+                    // 메시지 전송하고 수신하면 인터럽트 0번 종료
+				 if(FireStatus.s_BAT >= 0) // 데이터가 수신이 되었으면 메시지에 들어있는 값은 0보다 크거나 같다
+                {
+                    PageValue.s_FireRecvResult_1[BAT_RESULT] = 1;  // 수신완료 플래그 설정하고
+                }
 				break;
 			case 5:
-				PageValue.s_FireRecvResult_1[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(3);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
+                 SendData(ABAT);  // 전송할 메시지 변수 저장
+                //인터럽트0번 동작
+                    // 메시지 전송하고 수신하면 인터럽트 0번 종료
+			 if(FireStatus.s_ABAT >= 0) // 데이터가 수신이 되었으면 메시지에 들어있는 값은 0보다 크거나 같다
+                {
+                    PageValue.s_FireRecvResult_1[ABAT_RESULT] = 1;  // 수신완료 플래그 설정하고
+                }
 				break;
 			case 6:
-				PageValue.s_FireRecvResult_1[BDU_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(3);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
+                 SendData(BDU);  // 전송할 메시지 변수 저장
+                //인터럽트0번 동작
+                    // 메시지 전송하고 수신하면 인터럽트 0번 종료
+				 if(FireStatus.s_BDU >= 0) // 데이터가 수신이 되었으면 메시지에 들어있는 값은 0보다 크거나 같다
+                {
+                    PageValue.s_FireRecvResult_1[BDU_RESULT] = 1;  // 수신완료 플래그 설정하고
+                }
 				break;
 			case 7:
-				PageValue.s_FireRecvResult_1[ARMING_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(3);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
+                 SendData(ARMING);  // 전송할 메시지 변수 저장
+                //인터럽트0번 동작
+                    // 메시지 전송하고 수신하면 인터럽트 0번 종료
+			 if(FireStatus.s_ARMING >= 0) // 데이터가 수신이 되었으면 메시지에 들어있는 값은 0보다 크거나 같다
+                {
+                    PageValue.s_FireRecvResult_1[ARMING_RESULT] = 1;  // 수신완료 플래그 설정하고
+                }
 				break;
 			case 8:
-				PageValue.s_FireRecvResult_1[INTARM_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(3);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
+                 SendData(INTARM);  // 전송할 메시지 변수 저장
+                //인터럽트0번 동작
+                    // 메시지 전송하고 수신하면 인터럽트 0번 종료
+			 if(FireStatus.s_INTARM >= 0) // 데이터가 수신이 되었으면 메시지에 들어있는 값은 0보다 크거나 같다
+                {
+                    PageValue.s_FireRecvResult_1[INTARM_RESULT] = 1;  // 수신완료 플래그 설정하고
+                }
 				break;
 			case 9:
-				PageValue.s_FireRecvResult_1[INT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(3);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
+                 SendData(INT);  // 전송할 메시지 변수 저장
+                //인터럽트0번 동작
+                    // 메시지 전송하고 수신하면 인터럽트 0번 종료
+               if(FireStatus.s_INT >= 0) // 데이터가 수신이 되었으면 메시지에 들어있는 값은 0보다 크거나 같다
+                {
+                    PageValue.s_FireRecvResult_1[INT_RESULT] = 1;  // 수신완료 플래그 설정하고
+                }
 				break;
+                default:
+                    //10일 경우에 아무런 동작을 하지 않는다.
+                    break;
 			}
 			// </editor-fold>
+			
 		}
 		else if(ButtonValue.s_NextButton == 1)
 		{
-			// <editor-fold defaultstate="collapsed" desc="1호탄 통합 점검 세부 결과">
+            // <editor-fold defaultstate="collapsed" desc="1호탄 통합 점검 세부 결과">
 			switch(g_InputValue)
 			{
 			case 1:
+             
 				printf("i Result/MSLEXTPWR.png,0,0\r");
+                RecvDataSort(MSL,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				AlramPrint();
-
-				PageValue.s_FireDetailResult_1[MSL_RESULT] = 1;
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1661,7 +1822,7 @@ void MenuDisplay(void)
 			case 2:
 				printf("i Result/TESTEXTPWR.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_1[EXT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
+				 RecvDataSort(EXT,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1670,7 +1831,7 @@ void MenuDisplay(void)
 			case 3:
 				printf("i Result/EBSQB.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_1[EB_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
+				 RecvDataSort(EB,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1678,7 +1839,7 @@ void MenuDisplay(void)
 			case 4:
 				printf("i Result/BATSQB.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_1[BAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
+				 RecvDataSort(BAT,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1687,7 +1848,7 @@ void MenuDisplay(void)
 			case 5:
 				printf("i Result/ABATSQB.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_1[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
+				 RecvDataSort(ABAT,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1695,7 +1856,7 @@ void MenuDisplay(void)
 			case 6:
 				printf("i Result/BDUSQB.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_1[BDU_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
+				 RecvDataSort(BDU,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1704,7 +1865,7 @@ void MenuDisplay(void)
 			case 7:
 				printf("i Result/ARMING.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_1[ARMING_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
+				 RecvDataSort(ARMING,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1712,7 +1873,7 @@ void MenuDisplay(void)
 			case 8:
 				printf("i Result/INTARMING.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_1[INTARM_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
+			 RecvDataSort(INTARM,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1721,7 +1882,7 @@ void MenuDisplay(void)
 			case 9:
 				printf("i Result/INTSQB.png,0,0\r");
 				AlramPrint();
-				PageValue.s_FireDetailResult_1[INT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
+                 RecvDataSort(INT,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
 				g_InputValue = 0;
 				g_MenuPage = 0;
@@ -1772,161 +1933,11 @@ void MenuDisplay(void)
 		// <editor-fold defaultstate="collapsed" desc="2호탄 개별 점검">
 		if(ButtonValue.s_OkButton == 1)
 		{
-			// <editor-fold defaultstate="collapsed" desc="2호탄 개별 점검">
-			switch(g_InputValue)
-			{
-			case 1:
-				PageValue.s_FireRecvResult_2[MSL_RESULT] = 1; // 유도탄 전원 수신 확인
-				TestResultCheck(4);         // 점검 결과 표시
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
-				break;
-			case 2:
-				PageValue.s_FireRecvResult_2[EXT_RESULT] = 1; // 유도탄 전원 수신 확인
-				TestResultCheck(4);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
-				break;
-			case 3:
-
-				PageValue.s_FireRecvResult_2[EB_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(4);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
-				break;
-			case 4:
-				PageValue.s_FireRecvResult_2[BAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(4);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
-				break;
-			case 5:
-				PageValue.s_FireRecvResult_2[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(4);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
-				break;
-			case 6:
-				PageValue.s_FireRecvResult_2[BDU_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(4);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
-				break;
-			case 7:
-				PageValue.s_FireRecvResult_2[ARMING_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(4);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
-				break;
-			case 8:
-				PageValue.s_FireRecvResult_2[INTARM_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(4);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
-				break;
-			case 9:
-				PageValue.s_FireRecvResult_2[INT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(4);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
-				break;
-			}
-			// </editor-fold>
+			
 		}
 		else if(ButtonValue.s_NextButton == 1)
 		{
-			// <editor-fold defaultstate="collapsed" desc="2호탄 개별 점검 세부 결과">
-			switch(g_InputValue)
-			{
-			case 1:
-				printf("i Result/MSLEXTPWR.png,0,0\r");
-				AlramPrint();
-
-				PageValue.s_FireDetailResult_2[MSL_RESULT] = 1;
-				ButtonValue.s_NextButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 0;
-				break;
-			case 2:
-				printf("i Result/TESTEXTPWR.png,0,0\r");
-				AlramPrint();
-				PageValue.s_FireDetailResult_2[EXT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				ButtonValue.s_NextButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 0;
-				break;
-
-			case 3:
-				printf("i Result/EBSQB.png,0,0\r");
-				AlramPrint();
-				PageValue.s_FireDetailResult_2[EB_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				ButtonValue.s_NextButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 0;
-				break;
-			case 4:
-				printf("i Result/BATSQB.png,0,0\r");
-				AlramPrint();
-				PageValue.s_FireDetailResult_2[BAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				ButtonValue.s_NextButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 0;
-				break;
-
-			case 5:
-				printf("i Result/ABATSQB.png,0,0\r");
-				AlramPrint();
-				PageValue.s_FireDetailResult_2[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				ButtonValue.s_NextButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 0;
-				break;
-			case 6:
-				printf("i Result/BDUSQB.png,0,0\r");
-				AlramPrint();
-				PageValue.s_FireDetailResult_2[BDU_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				ButtonValue.s_NextButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 0;
-				break;
-
-			case 7:
-				printf("i Result/ARMING.png,0,0\r");
-				AlramPrint();
-				PageValue.s_FireDetailResult_2[ARMING_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				ButtonValue.s_NextButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 0;
-				break;
-			case 8:
-				printf("i Result/INTARMING.png,0,0\r");
-				AlramPrint();
-				PageValue.s_FireDetailResult_2[INTARM_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				ButtonValue.s_NextButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 0;
-				break;
-
-			case 9:
-				printf("i Result/INTSQB.png,0,0\r");
-				AlramPrint();
-				PageValue.s_FireDetailResult_2[INT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				ButtonValue.s_NextButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 0;
-				break;
-
-			}
-			// </editor-fold>
+		
 		}
 		else if((ButtonValue.s_BackButton == 1) && (PORTEbits.RE4 == 0))
 		{
@@ -1967,161 +1978,11 @@ void MenuDisplay(void)
 		// <editor-fold defaultstate="collapsed" desc="2호탄 통합 점검">
 		if(ButtonValue.s_OkButton == 1)
 		{
-			// <editor-fold defaultstate="collapsed" desc="2호탄 통합 점검">
-			switch(g_InputValue)
-			{
-			case 1:
-				PageValue.s_FireRecvResult_2[MSL_RESULT] = 1; // 유도탄 전원 수신 확인
-				TestResultCheck(4);         // 점검 결과 표시
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
-				break;
-			case 2:
-				PageValue.s_FireRecvResult_2[EXT_RESULT] = 1; // 유도탄 전원 수신 확인
-				TestResultCheck(4);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
-				break;
-			case 3:
-
-				PageValue.s_FireRecvResult_2[EB_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(4);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
-				break;
-			case 4:
-				PageValue.s_FireRecvResult_2[BAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(4);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
-				break;
-			case 5:
-				PageValue.s_FireRecvResult_2[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(4);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
-				break;
-			case 6:
-				PageValue.s_FireRecvResult_2[BDU_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(4);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
-				break;
-			case 7:
-				PageValue.s_FireRecvResult_2[ARMING_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(4);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
-				break;
-			case 8:
-				PageValue.s_FireRecvResult_2[INTARM_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(4);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
-				break;
-			case 9:
-				PageValue.s_FireRecvResult_2[INT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				TestResultCheck(4);
-				ButtonValue.s_OkButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 1;
-				break;
-			}
-			// </editor-fold>
+			
 		}
 		else if(ButtonValue.s_NextButton == 1)
 		{
-			// <editor-fold defaultstate="collapsed" desc="2호탄 통합 점검 세부 결과">
-			switch(g_InputValue)
-			{
-			case 1:
-				printf("i Result/MSLEXTPWR.png,0,0\r");
-				AlramPrint();
-
-				PageValue.s_FireDetailResult_2[MSL_RESULT] = 1;
-				ButtonValue.s_NextButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 0;
-				break;
-			case 2:
-				printf("i Result/TESTEXTPWR.png,0,0\r");
-				AlramPrint();
-				PageValue.s_FireDetailResult_2[EXT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				ButtonValue.s_NextButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 0;
-				break;
-
-			case 3:
-				printf("i Result/EBSQB.png,0,0\r");
-				AlramPrint();
-				PageValue.s_FireDetailResult_2[EB_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				ButtonValue.s_NextButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 0;
-				break;
-			case 4:
-				printf("i Result/BATSQB.png,0,0\r");
-				AlramPrint();
-				PageValue.s_FireDetailResult_2[BAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				ButtonValue.s_NextButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 0;
-				break;
-
-			case 5:
-				printf("i Result/ABATSQB.png,0,0\r");
-				AlramPrint();
-				PageValue.s_FireDetailResult_2[ABAT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				ButtonValue.s_NextButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 0;
-				break;
-			case 6:
-				printf("i Result/BDUSQB.png,0,0\r");
-				AlramPrint();
-				PageValue.s_FireDetailResult_2[BDU_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				ButtonValue.s_NextButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 0;
-				break;
-
-			case 7:
-				printf("i Result/ARMING.png,0,0\r");
-				AlramPrint();
-				PageValue.s_FireDetailResult_2[ARMING_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				ButtonValue.s_NextButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 0;
-				break;
-			case 8:
-				printf("i Result/INTARMING.png,0,0\r");
-				AlramPrint();
-				PageValue.s_FireDetailResult_2[INTARM_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				ButtonValue.s_NextButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 0;
-				break;
-
-			case 9:
-				printf("i Result/INTSQB.png,0,0\r");
-				AlramPrint();
-				PageValue.s_FireDetailResult_2[INT_RESULT] = 1;              // 발사 계통 점검 선택 메뉴 토글
-				ButtonValue.s_NextButton = 0;
-				g_InputValue = 0;
-				g_MenuPage = 0;
-				break;
-
-			}
-			// </editor-fold>
+			
 		}
 		else if((ButtonValue.s_BackButton == 1) && (PORTEbits.RE4 == 0))
 		{
@@ -2160,14 +2021,29 @@ void MenuDisplay(void)
 
 }
 
-void SendData(unsigned int Name)    // 16비트 배열로 전송됨
+void SendData(unsigned int Name)    // 16비트 배열로 전송됨 name 별 메시지 전송이 다름
 {
+    if(PageValue.s_Fire[FIRE_TEST_EACH_1]==1) FireTestCheck.s_Opcode = 0x4100;
+		else if(PageValue.s_Fire[FIRE_TEST_EACH_2]==1) FireTestCheck.s_Opcode = 0x4200;
+        FireTestCheck.s_Repeat = (FireTestCheck.s_Repeat == 3) ? 0 : FireTestCheck.s_Repeat+1 ;
+        FireTestCheck.s_SeqNo = (FireTestCheck.s_SeqNo == 65535) ? 0 : FireTestCheck.s_SeqNo+1 ;
+		FireTestCheck.s_DataSize = 0x0008;
+		FireTestCheck.s_LchrId = 0x0001;
+		FireTestCheck.s_McuId = 0x0001;
+		FireTestCheck.s_Time = 0;
+		g_DataBuffer[0] = FireTestCheck.s_Opcode;
+		g_DataBuffer[1] = FireTestCheck.s_Repeat;
+		g_DataBuffer[2] = FireTestCheck.s_SeqNo;
+		g_DataBuffer[3] = FireTestCheck.s_DataSize;
+		g_DataBuffer[4] = (FireTestCheck.s_LchrId << 7);
+		g_DataBuffer[4] = FireTestCheck.s_McuId ;
+		g_DataBuffer[5] = FireTestCheck.s_Time;
 	switch(Name)
 	{
-	case 0: //  통신 점검
+	case CON: //  통신 점검
 		ConnectCheck.s_Opcode = 0x4005;
-		ConnectCheck.s_Repeat = 0;
-		ConnectCheck.s_SeqNo = 0;
+		ConnectCheck.s_Repeat = (ConnectCheck.s_Repeat == 3) ? 0 : ConnectCheck.s_Repeat+1 ;
+        ConnectCheck.s_SeqNo = (ConnectCheck.s_SeqNo == 65535) ? 0 : ConnectCheck.s_SeqNo+1 ;
 		ConnectCheck.s_DataSize = 0x0004;
 		ConnectCheck.s_LchrId = 0x0001;
 		ConnectCheck.s_McuId = 0x0001;
@@ -2179,24 +2055,7 @@ void SendData(unsigned int Name)    // 16비트 배열로 전송됨
 		g_DataBuffer[4] =  ConnectCheck.s_LchrId;
 		g_DataBuffer[5] =  ConnectCheck.s_McuId;
 		break;
-	case 1: // 1호탄 발사 계통 점검
-		if(PageValue.s_Fire[FIRE_TEST_EACH_1]==1) FireTestCheck.s_Opcode = 0x4100;
-		else if(PageValue.s_Fire[FIRE_TEST_EACH_1]==1) FireTestCheck.s_Opcode = 0x4200;
-		FireTestCheck.s_Repeat = 0;
-		FireTestCheck.s_SeqNo = 0;
-		FireTestCheck.s_DataSize = 0x0008;
-		FireTestCheck.s_LchrId = 0x0001;
-		FireTestCheck.s_McuId = 0x0001;
-		FireTestCheck.s_Time = 0;
-		g_DataBuffer[0] = FireTestCheck.s_Opcode;
-		g_DataBuffer[1] =FireTestCheck.s_Repeat;
-		g_DataBuffer[2] =FireTestCheck.s_SeqNo;
-		g_DataBuffer[3] =FireTestCheck.s_DataSize;
-		g_DataBuffer[4] =(FireTestCheck.s_LchrId << 7);
-		g_DataBuffer[4] =FireTestCheck.s_McuId ;
-		g_DataBuffer[5] =FireTestCheck.s_Time;
-		if(PageValue.s_FireRecvResult_1[MSL_RESULT] == 1)
-		{
+	case MSL: // 1호탄 발사 계통 점검
 			FireTestCheck.s_MSLPWR = 0x02;
 			FireTestCheck.s_EXTPWR = 0;
 			FireTestCheck.s_EBSQUIB = 0;
@@ -2208,9 +2067,8 @@ void SendData(unsigned int Name)    // 16비트 배열로 전송됨
 			FireTestCheck.s_INTSQUIB = 0;
 			g_DataBuffer[6] =  (FireTestCheck.s_MSLPWR << 13);
 			g_DataBuffer[7] = 0;
-		}
-		else if(PageValue.s_FireRecvResult_1[EXT_RESULT] == 1)
-		{
+        break;
+        case EXT:
 			FireTestCheck.s_MSLPWR = 0;
 			FireTestCheck.s_EXTPWR = 0x01;
 			FireTestCheck.s_EBSQUIB = 0;
@@ -2222,10 +2080,9 @@ void SendData(unsigned int Name)    // 16비트 배열로 전송됨
 			FireTestCheck.s_INTSQUIB = 0;
 			g_DataBuffer[6] =  (FireTestCheck.s_EXTPWR << 11);
 			g_DataBuffer[7] = 0;
-		}
-		else if(PageValue.s_FireRecvResult_1[EB_RESULT] == 1)
-		{
-			FireTestCheck.s_MSLPWR = 0;
+            break;
+        case EB:
+            FireTestCheck.s_MSLPWR = 0;
 			FireTestCheck.s_EXTPWR = 0;
 			FireTestCheck.s_EBSQUIB = 0x01;
 			FireTestCheck.s_BATSQUIB = 0;
@@ -2236,10 +2093,10 @@ void SendData(unsigned int Name)    // 16비트 배열로 전송됨
 			FireTestCheck.s_INTSQUIB = 0;
 			g_DataBuffer[6] =  (FireTestCheck.s_EBSQUIB << 9);
 			g_DataBuffer[7] = 0;
-		}
-		else if(PageValue.s_FireRecvResult_1[BAT_RESULT] == 1)
-		{
-			FireTestCheck.s_MSLPWR = 0;
+            break;
+		
+        case BAT:
+            FireTestCheck.s_MSLPWR = 0;
 			FireTestCheck.s_EXTPWR = 0;
 			FireTestCheck.s_EBSQUIB = 0;
 			FireTestCheck.s_BATSQUIB = 0x01;
@@ -2250,10 +2107,9 @@ void SendData(unsigned int Name)    // 16비트 배열로 전송됨
 			FireTestCheck.s_INTSQUIB = 0;
 			g_DataBuffer[6] =  (FireTestCheck.s_BATSQUIB << 7);
 			g_DataBuffer[7] = 0;
-		}
-		else if(PageValue.s_FireRecvResult_1[ABAT_RESULT] == 1)
-		{
-			FireTestCheck.s_MSLPWR = 0;
+            break;
+        case ABAT:
+            FireTestCheck.s_MSLPWR = 0;
 			FireTestCheck.s_EXTPWR = 0;
 			FireTestCheck.s_EBSQUIB = 0;
 			FireTestCheck.s_BATSQUIB = 0;
@@ -2264,10 +2120,9 @@ void SendData(unsigned int Name)    // 16비트 배열로 전송됨
 			FireTestCheck.s_INTSQUIB = 0;
 			g_DataBuffer[6] =  (FireTestCheck.s_ABARSQUIB << 5);
 			g_DataBuffer[7] = 0;
-		}
-		else if(PageValue.s_FireRecvResult_1[BDU_RESULT] == 1)
-		{
-			FireTestCheck.s_MSLPWR = 0;
+            break;
+        case BDU:
+            FireTestCheck.s_MSLPWR = 0;
 			FireTestCheck.s_EXTPWR = 0;
 			FireTestCheck.s_EBSQUIB = 0;
 			FireTestCheck.s_BATSQUIB = 0;
@@ -2278,10 +2133,9 @@ void SendData(unsigned int Name)    // 16비트 배열로 전송됨
 			FireTestCheck.s_INTSQUIB = 0;
 			g_DataBuffer[6] =  (FireTestCheck.s_BDUSQUIB << 3);
 			g_DataBuffer[7] = 0;
-		}
-		else if(PageValue.s_FireRecvResult_1[ARMING_RESULT] == 1)
-		{
-			FireTestCheck.s_MSLPWR = 0;
+            break;
+        case ARMING:
+            	FireTestCheck.s_MSLPWR = 0;
 			FireTestCheck.s_EXTPWR = 0;
 			FireTestCheck.s_EBSQUIB = 0;
 			FireTestCheck.s_BATSQUIB = 0;
@@ -2292,10 +2146,9 @@ void SendData(unsigned int Name)    // 16비트 배열로 전송됨
 			FireTestCheck.s_INTSQUIB = 0;
 			g_DataBuffer[6] =  (FireTestCheck.s_ARMING << 1);
 			g_DataBuffer[7] = 0;
-		}
-		else if(PageValue.s_FireRecvResult_1[INTARM_RESULT] == 1)
-		{
-			FireTestCheck.s_MSLPWR = 0;
+            break;
+        case INTARM:
+            	FireTestCheck.s_MSLPWR = 0;
 			FireTestCheck.s_EXTPWR = 0;
 			FireTestCheck.s_EBSQUIB = 0;
 			FireTestCheck.s_BATSQUIB = 0;
@@ -2306,10 +2159,9 @@ void SendData(unsigned int Name)    // 16비트 배열로 전송됨
 			FireTestCheck.s_INTSQUIB = 0;
 			g_DataBuffer[6] =  FireTestCheck.s_INTARM << 0;
 			g_DataBuffer[7] = 0;
-		}
-		else if(PageValue.s_FireRecvResult_1[INT_RESULT] == 1)
-		{
-			FireTestCheck.s_MSLPWR = 0;
+            break;
+        case INT:
+            FireTestCheck.s_MSLPWR = 0;
 			FireTestCheck.s_EXTPWR = 0;
 			FireTestCheck.s_EBSQUIB = 0;
 			FireTestCheck.s_BATSQUIB = 0;
@@ -2320,18 +2172,15 @@ void SendData(unsigned int Name)    // 16비트 배열로 전송됨
 			FireTestCheck.s_INTSQUIB = 0x01;
 			g_DataBuffer[6] = 0;
 			g_DataBuffer[7] = (FireTestCheck.s_INTSQUIB << 13);
-		}
-
-		break;
-
+            break;
 	}
 }
 
-void RecvData(unsigned int Name)                     // 16비트 배열로 수신됨
+void RecvDataParsing(unsigned int Name)                     // 16비트 배열로 수신됨 CON_ACK, FIRE_ACK
 {
 	switch(Name)
 	{
-	case 0: // 통신 점검 응답 
+	case CON_ACK: // 통신 점검 응답 
 		ConnectCheckAck.s_Opcode = g_TempBuffer[0];
 		ConnectCheckAck.s_Repeat = g_TempBuffer[1];
 		ConnectCheckAck.s_SeqNo = g_TempBuffer[2];
@@ -2339,32 +2188,291 @@ void RecvData(unsigned int Name)                     // 16비트 배열로 수신됨
 		ConnectCheckAck.s_LchrId = g_TempBuffer[4];
 		ConnectCheckAck.s_McuId = g_TempBuffer[5];
 		if( ConnectCheckAck.s_Opcode == 0x4005) PageValue.s_Check[CHK_LAN] = 1; // 랜 연결됨 
+		
 		break;
-	case 1:
+	case FIRE_ACK:
 		FireTestCheckResult.s_Opcode = g_TempBuffer[0]; 
 		FireTestCheckResult.s_Repeat = g_TempBuffer[1];
 		FireTestCheckResult.s_SeqNo = g_TempBuffer[2];
 		FireTestCheckResult.s_DataSize = g_TempBuffer[3];
-		FireTestCheckResult.s_LchrId = (g_TempBuffer[4] & 0xFF00);
+		FireTestCheckResult.s_LchrId = (g_TempBuffer[4] & 0xFF00) >> 8;
 		FireTestCheckResult.s_McuId = (g_TempBuffer[4] & 0x00FF);
 
-		FireTestCheckResult.s_MSLPWR = (g_TempBuffer[5] & 0xF000); 
-		FireTestCheckResult.s_EXTPWR = (g_TempBuffer[5] & 0x0F00);
-		FireTestCheckResult.s_EBSQUIB = (g_TempBuffer[5] & 0x00FF);
+		FireTestCheckResult.s_MSLPWR = (g_TempBuffer[5] & 0x3000)>> 12; 
+		FireTestCheckResult.s_EXTPWR = (g_TempBuffer[5] & 0x0300)>> 8;
+		FireTestCheckResult.s_EBSQUIB = (g_TempBuffer[5] & 0x001F);
+		FireTestCheckResult.EB.s_EB1SQUIB1 = FireTestCheckResult.s_EBSQUIB & 0x01;
+		FireTestCheckResult.EB.s_EB1SQUIB2 = FireTestCheckResult.s_EBSQUIB & 0x02;
+		FireTestCheckResult.EB.s_EB2SQUIB1 = FireTestCheckResult.s_EBSQUIB & 0x04;
+		FireTestCheckResult.EB.s_EB2SQUIB2 = FireTestCheckResult.s_EBSQUIB & 0x08;
+		FireTestCheckResult.EB.s_Status =  FireTestCheckResult.s_EBSQUIB & 0x10;
 
-		FireTestCheckResult.s_BATSQUIB = (g_TempBuffer[6] & 0xFF00);
+		FireTestCheckResult.s_BATSQUIB = (g_TempBuffer[6] & 0xFF00)>> 8;
+		FireTestCheckResult.BAT.s_BAT1SQUIB1 = FireTestCheckResult.s_BATSQUIB & 0x01;
+		FireTestCheckResult.BAT.s_BAT1SQUIB2 = FireTestCheckResult.s_BATSQUIB & 0x02;
+		FireTestCheckResult.BAT.s_BAT2SQUIB1 = FireTestCheckResult.s_BATSQUIB & 0x04;
+		FireTestCheckResult.BAT.s_BAT2SQUIB2 = FireTestCheckResult.s_BATSQUIB & 0x08;
+		FireTestCheckResult.BAT.s_Status =  FireTestCheckResult.s_BATSQUIB & 0x10;
+
 		FireTestCheckResult.s_ABATSQUIB = (g_TempBuffer[6] & 0x00FF);
+		FireTestCheckResult.ABAT.s_ABAT1SQUIB1 = FireTestCheckResult.s_ABATSQUIB & 0x01;
+		FireTestCheckResult.ABAT.s_ABAT1SQUIB2 = FireTestCheckResult.s_ABATSQUIB & 0x02;
+		FireTestCheckResult.ABAT.s_ABAT2SQUIB1 = FireTestCheckResult.s_ABATSQUIB & 0x04;
+		FireTestCheckResult.ABAT.s_ABAT2SQUIB2 = FireTestCheckResult.s_ABATSQUIB & 0x08;
+		FireTestCheckResult.ABAT.s_Status =  FireTestCheckResult.s_ABATSQUIB & 0x10;
 
-		FireTestCheckResult.s_BDUSQUIB = (g_TempBuffer[7] & 0xF000);
-		FireTestCheckResult.s_ARMING = g_TempBuffer[7] & 0x0F00;
+		FireTestCheckResult.s_BDUSQUIB = (g_TempBuffer[7] & 0xF000)>> 8;
+		FireTestCheckResult.BDU.s_BDUSQUIB1 = FireTestCheckResult.s_BDUSQUIB & 0x10;
+		FireTestCheckResult.BDU.s_BDUSQUIB2 = FireTestCheckResult.s_BDUSQUIB & 0x20;
+		FireTestCheckResult.BDU.s_Status =  FireTestCheckResult.s_BDUSQUIB & 0x40;
+
+		FireTestCheckResult.s_ARMING = (g_TempBuffer[7] & 0x0F00)>> 8;
 		FireTestCheckResult.s_INTARM = (g_TempBuffer[7] & 0x00F0);
+
 		FireTestCheckResult.s_INTSQUIB = (g_TempBuffer[7] & 0x000F);
+		FireTestCheckResult.INT.s_INTSQUIB1 = FireTestCheckResult.s_INTSQUIB & 0x01;
+		FireTestCheckResult.INT.s_INTSQUIB2 = FireTestCheckResult.s_INTSQUIB & 0x02;
+		FireTestCheckResult.INT.s_Status =  FireTestCheckResult.s_INTSQUIB & 0x04;
 		break;
 	}
 }
 
+void RecvDataSort(unsigned int Name, unsigned int Num)
+{
+	switch(Name)
+	{
+	case MSL:
+		if(FireTestCheckResult.s_MSLPWR == 0x0001)	// 유도탄 전원 끔이면
+		{
+			FireStatus.s_MSL[Num] = OFF_1 ;
+            printf("f X,197,54\r");
+            (Num == FIRST) ? (PageValue.s_FireDetailResult_1[MSL_RESULT] = 1) : (PageValue.s_FireDetailResult_1[MSL_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
+		}
+		else if(FireTestCheckResult.s_MSLPWR == 0x0002)	// 유도탄 전원 켬이면
+		{
+            FireStatus.s_MSL[Num] = ON_2 ;
+             printf("f O,197,54\r");
+             (Num == FIRST) ? (PageValue.s_FireDetailResult_1[MSL_RESULT] = 1) : (PageValue.s_FireDetailResult_2[MSL_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
+		}
+		else // 유도탄 전원 해당 없으면
+		{
+			FireStatus.s_MSL[Num] = NONE ;
+             printf("f   ,197,54\r");
+             (Num == FIRST) ? (PageValue.s_FireDetailResult_1[MSL_RESULT] = 1) : (PageValue.s_FireDetailResult_2[MSL_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
+		}
+		
+		break;
 
-unsigned char     socket(  unsigned char  protocol,  unsigned short port,  unsigned short mode)
+	case EXT:
+		if(FireTestCheckResult.s_EXTPWR == 0x0001)	// 시험장치 전원 끔이면
+		{
+			FireStatus.s_EXT[Num] = OFF_1 ;
+             printf("f X,214,54\r");
+             	(Num == FIRST) ? (PageValue.s_FireDetailResult_1[EXT_RESULT] = 1) : (PageValue.s_FireDetailResult_2[EXT_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
+		}
+		else if(FireTestCheckResult.s_EXTPWR == 0x0002)	// 시험장치 전원 켬이면
+		{
+			FireStatus.s_EXT[Num] = ON_2 ;
+             printf("f O,214,54\r");
+             	(Num == FIRST) ? (PageValue.s_FireDetailResult_1[EXT_RESULT] = 1) : (PageValue.s_FireDetailResult_2[EXT_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
+		}
+		else // 시험장치 전원 해당 없으면
+		{
+			FireStatus.s_EXT[Num] = NONE ;
+             printf("f   ,214,54\r");
+             	(Num == FIRST) ? (PageValue.s_FireDetailResult_1[EXT_RESULT] = 1) : (PageValue.s_FireDetailResult_2[EXT_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
+		}
+	
+		break;
+
+	case EB:
+		FireStatus.s_EB[Num][EB_STATUS] = (FireTestCheckResult.EB.s_Status == 0x0010) ? GOOD_1 : FAIL;	// EB 점검여부가 점검완료
+		if(FireStatus.s_EB[Num][EB_STATUS] == GOOD_1)
+        { // 점검이 완료 되었을경우 정상 비정상 판단함
+			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[EB_RESULT] = 1) : (PageValue.s_FireDetailResult_2[EB_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
+			FireStatus.s_EB[Num][EB1_SQUIB1] = (FireTestCheckResult.EB.s_EB1SQUIB1 == 0x0001) ? GOOD_1 : FAIL;	// EB1 SQUIB1 이 정상이면
+			if(FireStatus.s_EB[Num][EB1_SQUIB1] == GOOD_1) printf("f O,182,54\r");
+			else printf("f X,182,54\r");
+            
+			FireStatus.s_EB[Num][EB1_SQUIB2] = (FireTestCheckResult.EB.s_EB1SQUIB2 == 0x0002) ? GOOD_1 : FAIL;	// EB1 SQUIB2 이 정상이면
+			if(FireStatus.s_EB[Num][EB1_SQUIB2] == GOOD_1) printf("f O,182,80\r");
+			else printf("f X,182,80\r");
+            
+			FireStatus.s_EB[Num][EB2_SQUIB1] = (FireTestCheckResult.EB.s_EB2SQUIB1 == 0x0004) ? GOOD_1 : FAIL;	// EB2 SQUIB1 이 정상이면
+			if(FireStatus.s_EB[Num][EB2_SQUIB1] == GOOD_1) printf("f O,182,106\r");
+			else printf("f X,182,106\r");
+            
+			FireStatus.s_EB[Num][EB2_SQUIB2] = (FireTestCheckResult.EB.s_EB2SQUIB2 == 0x0008) ? GOOD_1 : FAIL;	// EB2 SQUIB2 이 정상이면
+			if(FireStatus.s_EB[Num][EB2_SQUIB2] == GOOD_1) printf("f O,182,132\r");
+			else printf("f X,182,132\r");
+
+		}
+		else	// 미점검 일경우
+		{
+			FireStatus.s_EB[Num][EB1_SQUIB1] =  FAIL;	
+			FireStatus.s_EB[Num][EB1_SQUIB2] =  FAIL;	
+			FireStatus.s_EB[Num][EB2_SQUIB1] =  FAIL;	
+			FireStatus.s_EB[Num][EB2_SQUIB2] =  FAIL;	
+			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[EB_RESULT] = 0) : (PageValue.s_FireDetailResult_2[EB_RESULT] = 0);	// 미점검 일경우 점검결과 체크 안함
+		}
+		break;
+
+	case BAT:
+		FireStatus.s_BAT[Num][BAT_STATUS] = (FireTestCheckResult.BAT.s_Status == 0x0010) ? GOOD_1 : FAIL;	// BAT 점검여부가 점검완료
+		if(FireStatus.s_BAT[Num][BAT_STATUS] == GOOD_1)
+        { // 점검이 완료 되었을경우 정상 비정상 판단함
+			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[BAT_RESULT] = 1) : (PageValue.s_FireDetailResult_2[BAT_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
+			FireStatus.s_BAT[Num][BAT1_SQUIB1] = (FireTestCheckResult.BAT.s_BAT1SQUIB1 == 0x0001) ? GOOD_1 : FAIL;	// BAT1_SQUIB1 이 정상이면
+			if(FireStatus.s_BAT[Num][BAT1_SQUIB1] == GOOD_1) printf("f O,198,54\r");
+			else printf("f X,198,54\r");
+            
+			FireStatus.s_BAT[Num][BAT1_SQUIB2] = (FireTestCheckResult.BAT.s_BAT1SQUIB2 == 0x0002) ? GOOD_1 : FAIL;	// BAT1_SQUIB2 이 정상이면
+			if(FireStatus.s_BAT[Num][BAT1_SQUIB2] == GOOD_1) printf("f O,198,80\r");
+			else printf("f X,198,80\r");
+            
+			FireStatus.s_BAT[Num][BAT2_SQUIB1] = (FireTestCheckResult.BAT.s_BAT2SQUIB1 == 0x0004) ? GOOD_1 : FAIL;	// BAT2_SQUIB1 이 정상이면
+			if(FireStatus.s_BAT[Num][BAT2_SQUIB1] == GOOD_1) printf("f O,198,106\r");
+			else printf("f X,198,106\r");
+            
+			FireStatus.s_BAT[Num][BAT2_SQUIB2] = (FireTestCheckResult.BAT.s_BAT2SQUIB2 == 0x0008) ? GOOD_1 : FAIL;	// BAT2_SQUIB2 이 정상이면
+			if(FireStatus.s_BAT[Num][BAT2_SQUIB2] == GOOD_1) printf("f O,198,132\r");
+			else printf("f X,198,132\r");
+
+		}
+		else	// 미점검 일경우
+		{
+			FireStatus.s_BAT[Num][BAT1_SQUIB1] =  FAIL;	
+			FireStatus.s_BAT[Num][BAT1_SQUIB2] =  FAIL;	
+			FireStatus.s_BAT[Num][BAT2_SQUIB1] =  FAIL;	
+			FireStatus.s_BAT[Num][BAT2_SQUIB2] =  FAIL;	
+			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[BAT_RESULT] = 0) : (PageValue.s_FireDetailResult_2[BAT_RESULT] = 0);	// 미점검 일경우 점검결과 체크 안함
+		}
+		break;
+
+	case ABAT:
+		FireStatus.s_ABAT[Num][ABAT_STATUS] = (FireTestCheckResult.ABAT.s_Status == 0x0010) ? GOOD_1 : FAIL;	// ABAT 점검여부가 점검완료
+		if(FireStatus.s_ABAT[Num][ABAT_STATUS] == GOOD_1){ // 점검이 완료 되었을경우 정상 비정상 판단함
+			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[ABAT_RESULT] = 1) : (PageValue.s_FireDetailResult_2[ABAT_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
+			FireStatus.s_ABAT[Num][ABAT1_SQUIB1] = (FireTestCheckResult.ABAT.s_ABAT1SQUIB1 == 0x0001) ? GOOD_1 : FAIL;	// ABAT1_SQUIB1 이 정상이면
+			if(FireStatus.s_ABAT[Num][ABAT1_SQUIB1] == GOOD_1) printf("f O,215,54\r");
+			else printf("f X,215,54\r");
+            
+			FireStatus.s_ABAT[Num][ABAT1_SQUIB2] = (FireTestCheckResult.ABAT.s_ABAT1SQUIB2 == 0x0002) ? GOOD_1 : FAIL;	// ABAT1_SQUIB2 이 정상이면
+			if(FireStatus.s_ABAT[Num][ABAT1_SQUIB2] == GOOD_1) printf("f O,215,80\r");
+			else printf("f X,215,80\r");
+            
+			FireStatus.s_ABAT[Num][ABAT2_SQUIB1] = (FireTestCheckResult.ABAT.s_ABAT2SQUIB1 == 0x0004) ? GOOD_1 : FAIL;	// ABAT2_SQUIB1 이 정상이면
+			if(FireStatus.s_ABAT[Num][ABAT2_SQUIB1] == GOOD_1) printf("f O,215,106\r");
+			else printf("f X,215,106\r");
+            
+			FireStatus.s_ABAT[Num][ABAT2_SQUIB2] = (FireTestCheckResult.ABAT.s_ABAT2SQUIB2 == 0x0008) ? GOOD_1 : FAIL;	// ABAT2_SQUIB2 이 정상이면
+			if(FireStatus.s_ABAT[Num][ABAT2_SQUIB2] == GOOD_1) printf("f O,215,132\r");
+			else printf("f X,215,132\r");
+
+		}
+		else	// 미점검 일경우
+		{
+			FireStatus.s_ABAT[Num][ABAT1_SQUIB1] =  FAIL;	
+			FireStatus.s_ABAT[Num][ABAT1_SQUIB2] =  FAIL;	
+			FireStatus.s_ABAT[Num][ABAT2_SQUIB1] =  FAIL;	
+			FireStatus.s_ABAT[Num][ABAT2_SQUIB2] =  FAIL;	
+			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[ABAT_RESULT] = 0) : (PageValue.s_FireDetailResult_2[ABAT_RESULT] = 0);	// 미점검 일경우 점검결과 체크 안함
+		}
+		break;
+
+	case BDU:
+		FireStatus.s_BDU[Num][BDU_STATUS] = (FireTestCheckResult.BDU.s_Status == 0x0004) ? GOOD_1 : FAIL;	// BDU 점검여부가 점검완료
+		if(FireStatus.s_BDU[Num][BDU_STATUS] == GOOD_1)
+        { // 점검이 완료 되었을경우 정상 비정상 판단함
+			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[BDU_RESULT] = 1) : (PageValue.s_FireDetailResult_2[BDU_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
+			FireStatus.s_BDU[Num][BDU_SQUIB1] = (FireTestCheckResult.BDU.s_BDUSQUIB1 == 0x0001) ? GOOD_1 : FAIL;	// BDU1_SQUIB1 이 정상이면
+			if(FireStatus.s_BDU[Num][BDU_SQUIB1] == GOOD_1) printf("f O,184,54\r");
+			else printf("f X,184,54\r");
+            
+			FireStatus.s_BDU[Num][BDU_SQUIB2] = (FireTestCheckResult.BDU.s_BDUSQUIB2 == 0x0002) ? GOOD_1 : FAIL;	// BDU1_SQUIB2 이 정상이면
+			if(FireStatus.s_BDU[Num][BDU_SQUIB2] == GOOD_1) printf("f O,184,80\r");
+			else printf("f X,184,80\r");
+
+
+		}
+		else	// 미점검 일경우
+		{
+			FireStatus.s_BDU[Num][BDU_SQUIB1] =  FAIL;	
+			FireStatus.s_BDU[Num][BDU_SQUIB2] =  FAIL;	
+			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[BDU_RESULT] = 0) : (PageValue.s_FireDetailResult_2[BDU_RESULT] = 0);	// 미점검 일경우 점검결과 체크 안함
+		}
+		break;
+
+	case ARMING:
+
+		if(FireTestCheckResult.s_ARMING == 0x0001)	// 신관장전 비정상이면
+		{
+			FireStatus.s_ARMING[Num] = FAIL ;
+			printf("f X,117,54\r");
+            	(Num == FIRST) ? (PageValue.s_FireDetailResult_1[ARMING_RESULT] = 1) : (PageValue.s_FireDetailResult_2[ARMING_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
+		}
+		else if(FireTestCheckResult.s_ARMING == 0x0002)	// 신관장전 정상이면
+		{
+			FireStatus.s_ARMING[Num] = GOOD_1 ;
+			printf("f O,117,54\r");
+            	(Num == FIRST) ? (PageValue.s_FireDetailResult_1[ARMING_RESULT] = 1) : (PageValue.s_FireDetailResult_2[ARMING_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
+		}
+		else // 신관장전 해당 없으면
+		{
+			FireStatus.s_ARMING[Num] = NONE ;
+            	(Num == FIRST) ? (PageValue.s_FireDetailResult_1[ARMING_RESULT] = 1) : (PageValue.s_FireDetailResult_2[ARMING_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
+		}
+	
+		break;
+
+	case INTARM:
+
+		if(FireTestCheckResult.s_INTARM == 0x0001)	// 점화장전 비정상이면
+		{
+			FireStatus.s_INTARM[Num] = FAIL ;
+			printf("f X,182,54\r");
+            (Num == FIRST) ? (PageValue.s_FireDetailResult_1[INTARM_RESULT] = 1) : (PageValue.s_FireDetailResult_2[INTARM_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
+		}
+		else if(FireTestCheckResult.s_INTARM == 0x0002)	// 점화장전 정상이면
+		{
+			FireStatus.s_INTARM[Num] = GOOD_1 ;
+			printf("f O,182,54\r");
+            (Num == FIRST) ? (PageValue.s_FireDetailResult_1[INTARM_RESULT] = 1) : (PageValue.s_FireDetailResult_2[INTARM_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
+		}
+		else // 점화장전 해당 없으면
+		{
+			FireStatus.s_INTARM[Num] = NONE ;
+            (Num == FIRST) ? (PageValue.s_FireDetailResult_1[INTARM_RESULT] = 1) : (PageValue.s_FireDetailResult_2[INTARM_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
+		}
+		
+		break;
+
+	case INT:
+		FireStatus.s_INT[Num][INT_STATUS] = (FireTestCheckResult.INT.s_Status == 0x0004) ? GOOD_1 : FAIL;	// INT 점검여부가 점검완료
+		if(FireStatus.s_INT[Num][INT_STATUS] == GOOD_1)
+        { // 점검이 완료 되었을경우 정상 비정상 판단함
+			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[INT_RESULT] = 1) : (PageValue.s_FireDetailResult_2[INT_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
+			FireStatus.s_INT[Num][INT_SQUIB1] = (FireTestCheckResult.INT.s_INTSQUIB1 == 0x0001) ? GOOD_1 : FAIL;	// INT1_SQUIB1 이 정상이면
+			if(FireStatus.s_INT[Num][INT_SQUIB1] == GOOD_1) printf("f O,182,54\r");
+			else printf("f X,182,54\r");
+            
+			FireStatus.s_INT[Num][INT_SQUIB2] = (FireTestCheckResult.INT.s_INTSQUIB2 == 0x0002) ? GOOD_1 : FAIL;	// INT1_SQUIB2 이 정상이면
+			if(FireStatus.s_INT[Num][INT_SQUIB2] == GOOD_1) printf("f O,182,80\r");
+			else printf("f X,182,80\r");
+		}
+		else	// 미점검 일경우
+		{
+			FireStatus.s_INT[Num][INT_SQUIB1] =  FAIL;	
+			FireStatus.s_INT[Num][INT_SQUIB2] =  FAIL;	
+			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[INT_RESULT] = 0) : (PageValue.s_FireDetailResult_2[INT_RESULT] = 0);	// 미점검 일경우 점검결과 체크 안함
+		}
+		break;
+	}
+}
+
+// <editor-fold defaultstate="collapsed" desc="WIZ830MJ UDP">
+
+unsigned char socket(unsigned char protocol, unsigned short port, unsigned short mode)
 {
 	IINCHIP_WRITE(Sn_MR(7),( unsigned short)(protocol | mode)); // set Sn_MR with protocol & flag 0x0000 0000 0800 03C0, 0x02--1
 	if (port != 0) IINCHIP_WRITE(Sn_PORTR(7),port); // 0x0000 0000 0800 03CA, 3000--2
@@ -2383,7 +2491,7 @@ unsigned char     socket(  unsigned char  protocol,  unsigned short port,  unsig
 	return 1;
 }
 
-void     close()
+void close()
 {
 	// M_08082008 : It is fixed the problem that Sn_SSR cannot be changed a undefined value to the defined value.
 	//              Refer to Errata of W5300
@@ -2411,7 +2519,7 @@ void     close()
 	setSn_CR(7 ,Sn_CR_CLOSE);     // Close s-th SOCKET
 }
 
-unsigned long   sendto( unsigned char  * buf, unsigned long len,  unsigned char  * addr,  unsigned short port)
+unsigned long sendto(unsigned char * buf, unsigned long len, unsigned char* addr, unsigned short port)
 {
 	unsigned char  status=0;
 	unsigned char  isr=0;
@@ -2472,7 +2580,7 @@ unsigned long   sendto( unsigned char  * buf, unsigned long len,  unsigned char 
 	return ret;
 }
 
-unsigned long   recvfrom( unsigned char  * buf, unsigned long len,  unsigned char  * addr,  unsigned short  *port)
+unsigned long recvfrom(unsigned char * buf, unsigned long len, unsigned char* addr, unsigned short*port)
 {
 	unsigned short head[4];
 	unsigned long data_len=0;
@@ -2523,7 +2631,7 @@ unsigned long   recvfrom( unsigned char  * buf, unsigned long len,  unsigned cha
 	return data_len;
 }
 
-void     loopback_udp(  unsigned short port,   unsigned short mode)
+void loopback_udp(  unsigned short port, unsigned short mode)
 {
 	unsigned long len;
 	unsigned char  destip[4];
@@ -2588,6 +2696,9 @@ void UdpSetting()
 	printf("SUBR : %d.%d.%d.%d\r\n",sn[0],sn[1],sn[2],sn[3]);
 	printf("SIPR : %d.%d.%d.%d\r\n",ip[0],ip[1],ip[2],ip[3]);
 }
+
+// </editor-fold>
+
 int main(void)
 {
 	InitGPIO();          // gpio 초기화
@@ -2617,4 +2728,3 @@ int main(void)
 	}
 	return(0);
 }
-//:DONE:

@@ -1,4 +1,4 @@
-Microchip Technology Inc, vv3_31 (A) ,
+Microchip Technology Inc, vv3_31 (A) e
 
 Tool Name:
   c:\program files (x86)\microchip\mplab c30\bin\bin\..\bin/pic30-elf-ld.exe
@@ -135,26 +135,26 @@ section                    address   length (PC units)   length (bytes) (dec)
 -------                    -------   -----------------   --------------------
 .text                        0x200              0x17d6          0x23c1  (9153)
 .const                      0x19d6               0x7d2           0xbbb  (3003)
-.text                       0x21a8              0x3b3e          0x58dd  (22749)
-.dinit                      0x5ce6               0x1ee           0x2e5  (741)
-.text                       0x5ed4               0x1b4           0x28e  (654)
+.text                       0x21a8              0x3b42          0x58e3  (22755)
+.dinit                      0x5cea               0x1ee           0x2e5  (741)
+.text                       0x5ed8               0x1b4           0x28e  (654)
 
-                     Total program memory used (bytes):         0x8dcc  (36300) 27%
+                     Total program memory used (bytes):         0x8dd2  (36306) 27%
 
 
 Data Memory  [Origin = 0x800, Length = 0x4000]
 
 section                    address      alignment gaps    total length  (dec)
 -------                    -------      --------------    -------------------
-.nbss                        0x800                   0           0x3e4  (996)
-.ndata                       0xbe4                   0            0x38  (56)
-.data                        0xc1c                   0           0x200  (512)
-.dconst                      0xe1c                   0            0x2a  (42)
-.data                        0xe46                   0            0x26  (38)
-.bss                         0xe6c                   0             0x6  (6)
-.data                        0xe72                   0             0x2  (2)
+.nbss                        0x800                   0           0x3e2  (994)
+.ndata                       0xbe2                   0            0x38  (56)
+.data                        0xc1a                   0           0x200  (512)
+.dconst                      0xe1a                   0            0x2a  (42)
+.data                        0xe44                   0            0x26  (38)
+.bss                         0xe6a                   0             0x6  (6)
+.data                        0xe70                   0             0x2  (2)
 
-                        Total data memory used (bytes):          0x674  (1652) 10%
+                        Total data memory used (bytes):          0x672  (1650) 10%
 
 
 Dynamic Memory Usage
@@ -162,9 +162,9 @@ Dynamic Memory Usage
 region                     address                      maximum length  (dec)
 ------                     -------                      ---------------------
 heap                             0                                   0  (0)
-stack                        0xe74                              0x398c  (14732)
+stack                        0xe72                              0x398e  (14734)
 
-                        Maximum dynamic memory (bytes):         0x398c  (14732)
+                        Maximum dynamic memory (bytes):         0x398e  (14734)
 
 
 External Symbols in Data Memory (by address):
@@ -175,89 +175,87 @@ External Symbols in Data Memory (by address):
                     0x0866                  _g_UartFunCtionButton
                     0x0868                  _g_AdcBuffer
                     0x0872                  _g_AdcSample
-                    0x0886                  _Socket
-                    0x0888                  _g_MenuPage
-                    0x088a                  _iinchip_source_port
-                    0x088c                  _check_sendok_flag
-                    0x0894                  _status
-                    0x089c                  _EctsStatus
-                    0x0a0a                  _ButtonValue
-                    0x0a14                  _Adc7980Value
-                    0x0adc                  _SelfTest
-                    0x0aee                  _PageValue
-                    0x0b3e                  _ConnectCheck
-                    0x0b4a                  _ConnectCheckAck
-                    0x0b56                  _FireTestCheck
-                    0x0b76                  _FireTestCheckResult
-                    0x0b9c                  _TXMEM_SIZE
-                    0x0bbc                  _RXMEM_SIZE
-                    0x0bdc                  _SOCK_INT
-                    0x0be4                  _g_AdcCount
-                    0x0be6                  _g_RelayLedStatus
-                    0x0be8                  _g_RelayChannel
-                    0x0bea                  _g_InputValue
-                    0x0bec                  _g_TimerCount
-                    0x0bee                  _g_OkButtonTimerCount
-                    0x0bf0                  _g_OkButtonTimerCountPre
-                    0x0bf2                  _g_TimerCounter
-                    0x0bf4                  _g_DataBuffer
-                    0x0c00                  _g_TempBuffer
-                    0x0c0c                  _g_Sw
-                    0x0c1a                  _g_SwSum
-                    0x0c1c                  __npowers_
-                    0x0ccc                  __powers_
-                    0x0e46                  __Files
-                    0x0e48                  __iob
-                    0x0e6c                  __sobuf
-                    0x0e6e                  __sibuf
-                    0x0e70                  __outdone
-                    0x0e72                  ___C30_UART
+                    0x0886                  _g_MenuPage
+                    0x0888                  _iinchip_source_port
+                    0x088a                  _check_sendok_flag
+                    0x0892                  _status
+                    0x089a                  _EctsStatus
+                    0x0a08                  _ButtonValue
+                    0x0a12                  _Adc7980Value
+                    0x0ada                  _SelfTest
+                    0x0aec                  _PageValue
+                    0x0b3c                  _ConnectCheck
+                    0x0b48                  _ConnectCheckAck
+                    0x0b54                  _FireTestCheck
+                    0x0b74                  _FireTestCheckResult
+                    0x0b9a                  _TXMEM_SIZE
+                    0x0bba                  _RXMEM_SIZE
+                    0x0bda                  _SOCK_INT
+                    0x0be2                  _g_AdcCount
+                    0x0be4                  _g_RelayLedStatus
+                    0x0be6                  _g_RelayChannel
+                    0x0be8                  _g_InputValue
+                    0x0bea                  _g_TimerCount
+                    0x0bec                  _g_OkButtonTimerCount
+                    0x0bee                  _g_OkButtonTimerCountPre
+                    0x0bf0                  _g_TimerCounter
+                    0x0bf2                  _g_DataBuffer
+                    0x0bfe                  _g_TempBuffer
+                    0x0c0a                  _g_Sw
+                    0x0c18                  _g_SwSum
+                    0x0c1a                  __npowers_
+                    0x0cca                  __powers_
+                    0x0e44                  __Files
+                    0x0e46                  __iob
+                    0x0e6a                  __sobuf
+                    0x0e6c                  __sibuf
+                    0x0e6e                  __outdone
+                    0x0e70                  ___C30_UART
 
 External Symbols in Data Memory (by name):
 
-                    0x0a14                  _Adc7980Value
-                    0x0a0a                  _ButtonValue
-                    0x0b3e                  _ConnectCheck
-                    0x0b4a                  _ConnectCheckAck
-                    0x089c                  _EctsStatus
-                    0x0b56                  _FireTestCheck
-                    0x0b76                  _FireTestCheckResult
-                    0x0aee                  _PageValue
-                    0x0bbc                  _RXMEM_SIZE
-                    0x0bdc                  _SOCK_INT
-                    0x0adc                  _SelfTest
-                    0x0886                  _Socket
-                    0x0b9c                  _TXMEM_SIZE
-                    0x0e46                  __Files
-                    0x0e72                  ___C30_UART
-                    0x0e48                  __iob
-                    0x0c1c                  __npowers_
-                    0x0e70                  __outdone
-                    0x0ccc                  __powers_
-                    0x0e6e                  __sibuf
-                    0x0e6c                  __sobuf
-                    0x088c                  _check_sendok_flag
+                    0x0a12                  _Adc7980Value
+                    0x0a08                  _ButtonValue
+                    0x0b3c                  _ConnectCheck
+                    0x0b48                  _ConnectCheckAck
+                    0x089a                  _EctsStatus
+                    0x0b54                  _FireTestCheck
+                    0x0b74                  _FireTestCheckResult
+                    0x0aec                  _PageValue
+                    0x0bba                  _RXMEM_SIZE
+                    0x0bda                  _SOCK_INT
+                    0x0ada                  _SelfTest
+                    0x0b9a                  _TXMEM_SIZE
+                    0x0e44                  __Files
+                    0x0e70                  ___C30_UART
+                    0x0e46                  __iob
+                    0x0c1a                  __npowers_
+                    0x0e6e                  __outdone
+                    0x0cca                  __powers_
+                    0x0e6c                  __sibuf
+                    0x0e6a                  __sobuf
+                    0x088a                  _check_sendok_flag
                     0x0868                  _g_AdcBuffer
-                    0x0be4                  _g_AdcCount
+                    0x0be2                  _g_AdcCount
                     0x0872                  _g_AdcSample
                     0x0865                  _g_Buffer
-                    0x0bf4                  _g_DataBuffer
-                    0x0bea                  _g_InputValue
-                    0x0888                  _g_MenuPage
-                    0x0bee                  _g_OkButtonTimerCount
-                    0x0bf0                  _g_OkButtonTimerCountPre
-                    0x0be8                  _g_RelayChannel
-                    0x0be6                  _g_RelayLedStatus
+                    0x0bf2                  _g_DataBuffer
+                    0x0be8                  _g_InputValue
+                    0x0886                  _g_MenuPage
+                    0x0bec                  _g_OkButtonTimerCount
+                    0x0bee                  _g_OkButtonTimerCountPre
+                    0x0be6                  _g_RelayChannel
+                    0x0be4                  _g_RelayLedStatus
                     0x0800                  _g_RxBuffer
                     0x0864                  _g_RxData
-                    0x0c0c                  _g_Sw
-                    0x0c1a                  _g_SwSum
-                    0x0c00                  _g_TempBuffer
-                    0x0bec                  _g_TimerCount
-                    0x0bf2                  _g_TimerCounter
+                    0x0c0a                  _g_Sw
+                    0x0c18                  _g_SwSum
+                    0x0bfe                  _g_TempBuffer
+                    0x0bea                  _g_TimerCount
+                    0x0bf0                  _g_TimerCounter
                     0x0866                  _g_UartFunCtionButton
-                    0x088a                  _iinchip_source_port
-                    0x0894                  _status
+                    0x0888                  _iinchip_source_port
+                    0x0892                  _status
 
 External Symbols in Program Memory (by address):
 
@@ -360,89 +358,89 @@ External Symbols in Program Memory (by address):
                   0x004efc                  _main
                   0x004f34                  _IINCHIP_READ
                   0x004f40                  _IINCHIP_WRITE
-                  0x004f50                  _getMR
-                  0x004f5a                  _setMR
-                  0x004f68                  _getIR
-                  0x004f74                  _setIR
-                  0x004f84                  _getIMR
-                  0x004f90                  _setIMR
-                  0x004fa0                  _getSHAR
-                  0x004ff6                  _setSHAR
-                  0x005046                  _getGAR
-                  0x005082                  _setGAR
-                  0x0050b8                  _getSUBR
-                  0x0050dc                  _setSUBR
-                  0x005100                  _applySUBR
-                  0x00512a                  _clearSUBR
-                  0x00515c                  _getSIPR
-                  0x005198                  _setSIPR
-                  0x0051ce                  _getRTR
-                  0x0051da                  _setRTR
-                  0x0051ea                  _getRCR
-                  0x0051f8                  _setRCR
-                  0x005208                  _getPATR
-                  0x005214                  _getPTIMER
-                  0x005222                  _setPTIMER
-                  0x005232                  _getPMAGICR
-                  0x005240                  _setPMAGICR
-                  0x005250                  _getPSIDR
-                  0x00525c                  _getPDHAR
-                  0x0052b2                  _getUIPR
-                  0x0052ee                  _getUPORTR
-                  0x0052fa                  _getFMTUR
-                  0x005306                  _getPn_BRDYR
-                  0x005320                  _setPn_BRDYR
-                  0x005340                  _getPn_BDPTHR
-                  0x005358                  _setPn_BDPTHR
-                  0x005374                  _getIDR
-                  0x005380                  _getSn_MR
-                  0x005398                  _setSn_MR
-                  0x0053b4                  _getSn_CR
-                  0x0053ce                  _setSn_CR
-                  0x0053fe                  _getSn_IMR
-                  0x005418                  _setSn_IMR
-                  0x005438                  _getSn_IR
-                  0x005452                  _setSn_IR
-                  0x005472                  _getSn_SSR
-                  0x0054b2                  _getSn_DHAR
-                  0x00554a                  _setSn_DHAR
-                  0x0055ca                  _setSn_DPORTR
-                  0x0055e6                  _getSn_DIPR
-                  0x005650                  _setSn_DIPR
-                  0x0056a8                  _getSn_MSSR
-                  0x0056c0                  _setSn_MSSR
-                  0x0056dc                  _getSn_KPALVTR
-                  0x0056f8                  _setSn_KPALVTR
-                  0x00573a                  _getSn_TX_WRSR
-                  0x005780                  _setSn_TX_WRSR
-                  0x0057bc                  _getSn_TX_FSR
-                  0x005824                  _getSn_RX_RSR
-                  0x00588e                  _setSn_TX_FIFOR
-                  0x0058aa                  _getSn_RX_FIFOR
-                  0x0058c2                  _getSn_PROTOR
-                  0x0058dc                  _setSn_PROTOR
-                  0x005918                  _getSn_TOSR
-                  0x005932                  _setSn_TOSR
-                  0x005952                  _getSn_TTLR
-                  0x00596c                  _setSn_TTLR
-                  0x00598c                  _getSn_FRAGR
-                  0x0059a6                  _setSn_FRAGR
-                  0x0059c6                  _iinchip_init
-                  0x0059d8                  _sysinit
-                  0x005b96                  _wiz_write_buf
-                  0x005be2                  _wiz_read_buf
-                  0x005c2e                  _getIINCHIP_TxMAX
-                  0x005c40                  _getIINCHIP_RxMAX
-                  0x005c52                  _wait_1us
-                  0x005c96                  _wait_1ms
-                  0x005cbe                  _wait_10ms
-                  0x005ed4                  _InitGPIO
-                  0x005f12                  _InitTimer1
-                  0x005f42                  _InitTimer2
-                  0x005f70                  _InitUart1
-                  0x005fae                  _InitAdc
-                  0x00600a                  _InitSpi1
-                  0x006044                  _InitInterrupt
+                  0x004f54                  _getMR
+                  0x004f5e                  _setMR
+                  0x004f6c                  _getIR
+                  0x004f78                  _setIR
+                  0x004f88                  _getIMR
+                  0x004f94                  _setIMR
+                  0x004fa4                  _getSHAR
+                  0x004ffa                  _setSHAR
+                  0x00504a                  _getGAR
+                  0x005086                  _setGAR
+                  0x0050bc                  _getSUBR
+                  0x0050e0                  _setSUBR
+                  0x005104                  _applySUBR
+                  0x00512e                  _clearSUBR
+                  0x005160                  _getSIPR
+                  0x00519c                  _setSIPR
+                  0x0051d2                  _getRTR
+                  0x0051de                  _setRTR
+                  0x0051ee                  _getRCR
+                  0x0051fc                  _setRCR
+                  0x00520c                  _getPATR
+                  0x005218                  _getPTIMER
+                  0x005226                  _setPTIMER
+                  0x005236                  _getPMAGICR
+                  0x005244                  _setPMAGICR
+                  0x005254                  _getPSIDR
+                  0x005260                  _getPDHAR
+                  0x0052b6                  _getUIPR
+                  0x0052f2                  _getUPORTR
+                  0x0052fe                  _getFMTUR
+                  0x00530a                  _getPn_BRDYR
+                  0x005324                  _setPn_BRDYR
+                  0x005344                  _getPn_BDPTHR
+                  0x00535c                  _setPn_BDPTHR
+                  0x005378                  _getIDR
+                  0x005384                  _getSn_MR
+                  0x00539c                  _setSn_MR
+                  0x0053b8                  _getSn_CR
+                  0x0053d2                  _setSn_CR
+                  0x005402                  _getSn_IMR
+                  0x00541c                  _setSn_IMR
+                  0x00543c                  _getSn_IR
+                  0x005456                  _setSn_IR
+                  0x005476                  _getSn_SSR
+                  0x0054b6                  _getSn_DHAR
+                  0x00554e                  _setSn_DHAR
+                  0x0055ce                  _setSn_DPORTR
+                  0x0055ea                  _getSn_DIPR
+                  0x005654                  _setSn_DIPR
+                  0x0056ac                  _getSn_MSSR
+                  0x0056c4                  _setSn_MSSR
+                  0x0056e0                  _getSn_KPALVTR
+                  0x0056fc                  _setSn_KPALVTR
+                  0x00573e                  _getSn_TX_WRSR
+                  0x005784                  _setSn_TX_WRSR
+                  0x0057c0                  _getSn_TX_FSR
+                  0x005828                  _getSn_RX_RSR
+                  0x005892                  _setSn_TX_FIFOR
+                  0x0058ae                  _getSn_RX_FIFOR
+                  0x0058c6                  _getSn_PROTOR
+                  0x0058e0                  _setSn_PROTOR
+                  0x00591c                  _getSn_TOSR
+                  0x005936                  _setSn_TOSR
+                  0x005956                  _getSn_TTLR
+                  0x005970                  _setSn_TTLR
+                  0x005990                  _getSn_FRAGR
+                  0x0059aa                  _setSn_FRAGR
+                  0x0059ca                  _iinchip_init
+                  0x0059dc                  _sysinit
+                  0x005b9a                  _wiz_write_buf
+                  0x005be6                  _wiz_read_buf
+                  0x005c32                  _getIINCHIP_TxMAX
+                  0x005c44                  _getIINCHIP_RxMAX
+                  0x005c56                  _wait_1us
+                  0x005c9a                  _wait_1ms
+                  0x005cc2                  _wait_10ms
+                  0x005ed8                  _InitGPIO
+                  0x005f16                  _InitTimer1
+                  0x005f46                  _InitTimer2
+                  0x005f74                  _InitUart1
+                  0x005fb2                  _InitAdc
+                  0x00600e                  _InitSpi1
+                  0x006048                  _InitInterrupt
 
 External Symbols in Program Memory (by name):
 
@@ -452,14 +450,14 @@ External Symbols in Program Memory (by name):
                   0x004f34                  _IINCHIP_READ
                   0x004f40                  _IINCHIP_WRITE
                   0x00218a                  _IOPortSelectParam
-                  0x005fae                  _InitAdc
-                  0x005ed4                  _InitGPIO
-                  0x006044                  _InitInterrupt
+                  0x005fb2                  _InitAdc
+                  0x005ed8                  _InitGPIO
+                  0x006048                  _InitInterrupt
                   0x002d94                  _InitRelay
-                  0x00600a                  _InitSpi1
-                  0x005f12                  _InitTimer1
-                  0x005f42                  _InitTimer2
-                  0x005f70                  _InitUart1
+                  0x00600e                  _InitSpi1
+                  0x005f16                  _InitTimer1
+                  0x005f46                  _InitTimer2
+                  0x005f74                  _InitUart1
                   0x002a04                  _InitValue
                   0x0025d8                  _InnerVoltTest
                   0x003044                  _InsulationTest
@@ -543,91 +541,91 @@ External Symbols in Program Memory (by name):
                   0x000200                  __resetPRI
                   0x000672                  __vfprintf_cdfFnopuxX
                   0x000672                  __vfprintf_cdnopuxX
-                  0x005100                  _applySUBR
-                  0x00512a                  _clearSUBR
+                  0x005104                  _applySUBR
+                  0x00512e                  _clearSUBR
                   0x004ab6                  _close
                   0x00155a                  _frexpf
                   0x0019d6                  _g_Error
-                  0x0052fa                  _getFMTUR
-                  0x005046                  _getGAR
-                  0x005374                  _getIDR
-                  0x005c40                  _getIINCHIP_RxMAX
-                  0x005c2e                  _getIINCHIP_TxMAX
-                  0x004f84                  _getIMR
-                  0x004f68                  _getIR
-                  0x004f50                  _getMR
-                  0x005208                  _getPATR
-                  0x00525c                  _getPDHAR
-                  0x005232                  _getPMAGICR
-                  0x005250                  _getPSIDR
-                  0x005214                  _getPTIMER
-                  0x005340                  _getPn_BDPTHR
-                  0x005306                  _getPn_BRDYR
-                  0x0051ea                  _getRCR
-                  0x0051ce                  _getRTR
-                  0x004fa0                  _getSHAR
-                  0x00515c                  _getSIPR
-                  0x0050b8                  _getSUBR
-                  0x0053b4                  _getSn_CR
-                  0x0054b2                  _getSn_DHAR
-                  0x0055e6                  _getSn_DIPR
-                  0x00598c                  _getSn_FRAGR
-                  0x0053fe                  _getSn_IMR
-                  0x005438                  _getSn_IR
-                  0x0056dc                  _getSn_KPALVTR
-                  0x005380                  _getSn_MR
-                  0x0056a8                  _getSn_MSSR
-                  0x0058c2                  _getSn_PROTOR
-                  0x0058aa                  _getSn_RX_FIFOR
-                  0x005824                  _getSn_RX_RSR
-                  0x005472                  _getSn_SSR
-                  0x005918                  _getSn_TOSR
-                  0x005952                  _getSn_TTLR
-                  0x0057bc                  _getSn_TX_FSR
-                  0x00573a                  _getSn_TX_WRSR
-                  0x0052b2                  _getUIPR
-                  0x0052ee                  _getUPORTR
-                  0x0059c6                  _iinchip_init
+                  0x0052fe                  _getFMTUR
+                  0x00504a                  _getGAR
+                  0x005378                  _getIDR
+                  0x005c44                  _getIINCHIP_RxMAX
+                  0x005c32                  _getIINCHIP_TxMAX
+                  0x004f88                  _getIMR
+                  0x004f6c                  _getIR
+                  0x004f54                  _getMR
+                  0x00520c                  _getPATR
+                  0x005260                  _getPDHAR
+                  0x005236                  _getPMAGICR
+                  0x005254                  _getPSIDR
+                  0x005218                  _getPTIMER
+                  0x005344                  _getPn_BDPTHR
+                  0x00530a                  _getPn_BRDYR
+                  0x0051ee                  _getRCR
+                  0x0051d2                  _getRTR
+                  0x004fa4                  _getSHAR
+                  0x005160                  _getSIPR
+                  0x0050bc                  _getSUBR
+                  0x0053b8                  _getSn_CR
+                  0x0054b6                  _getSn_DHAR
+                  0x0055ea                  _getSn_DIPR
+                  0x005990                  _getSn_FRAGR
+                  0x005402                  _getSn_IMR
+                  0x00543c                  _getSn_IR
+                  0x0056e0                  _getSn_KPALVTR
+                  0x005384                  _getSn_MR
+                  0x0056ac                  _getSn_MSSR
+                  0x0058c6                  _getSn_PROTOR
+                  0x0058ae                  _getSn_RX_FIFOR
+                  0x005828                  _getSn_RX_RSR
+                  0x005476                  _getSn_SSR
+                  0x00591c                  _getSn_TOSR
+                  0x005956                  _getSn_TTLR
+                  0x0057c0                  _getSn_TX_FSR
+                  0x00573e                  _getSn_TX_WRSR
+                  0x0052b6                  _getUIPR
+                  0x0052f2                  _getUPORTR
+                  0x0059ca                  _iinchip_init
                   0x004d2c                  _loopback_udp
                   0x004efc                  _main
                   0x0005a8                  _memset
                   0x004c5a                  _recvfrom
                   0x004b46                  _sendto
-                  0x005082                  _setGAR
-                  0x004f90                  _setIMR
-                  0x004f74                  _setIR
-                  0x004f5a                  _setMR
-                  0x005240                  _setPMAGICR
-                  0x005222                  _setPTIMER
-                  0x005358                  _setPn_BDPTHR
-                  0x005320                  _setPn_BRDYR
-                  0x0051f8                  _setRCR
-                  0x0051da                  _setRTR
-                  0x004ff6                  _setSHAR
-                  0x005198                  _setSIPR
-                  0x0050dc                  _setSUBR
-                  0x0053ce                  _setSn_CR
-                  0x00554a                  _setSn_DHAR
-                  0x005650                  _setSn_DIPR
-                  0x0055ca                  _setSn_DPORTR
-                  0x0059a6                  _setSn_FRAGR
-                  0x005418                  _setSn_IMR
-                  0x005452                  _setSn_IR
-                  0x0056f8                  _setSn_KPALVTR
-                  0x005398                  _setSn_MR
-                  0x0056c0                  _setSn_MSSR
-                  0x0058dc                  _setSn_PROTOR
-                  0x005932                  _setSn_TOSR
-                  0x00596c                  _setSn_TTLR
-                  0x00588e                  _setSn_TX_FIFOR
-                  0x005780                  _setSn_TX_WRSR
+                  0x005086                  _setGAR
+                  0x004f94                  _setIMR
+                  0x004f78                  _setIR
+                  0x004f5e                  _setMR
+                  0x005244                  _setPMAGICR
+                  0x005226                  _setPTIMER
+                  0x00535c                  _setPn_BDPTHR
+                  0x005324                  _setPn_BRDYR
+                  0x0051fc                  _setRCR
+                  0x0051de                  _setRTR
+                  0x004ffa                  _setSHAR
+                  0x00519c                  _setSIPR
+                  0x0050e0                  _setSUBR
+                  0x0053d2                  _setSn_CR
+                  0x00554e                  _setSn_DHAR
+                  0x005654                  _setSn_DIPR
+                  0x0055ce                  _setSn_DPORTR
+                  0x0059aa                  _setSn_FRAGR
+                  0x00541c                  _setSn_IMR
+                  0x005456                  _setSn_IR
+                  0x0056fc                  _setSn_KPALVTR
+                  0x00539c                  _setSn_MR
+                  0x0056c4                  _setSn_MSSR
+                  0x0058e0                  _setSn_PROTOR
+                  0x005936                  _setSn_TOSR
+                  0x005970                  _setSn_TTLR
+                  0x005892                  _setSn_TX_FIFOR
+                  0x005784                  _setSn_TX_WRSR
                   0x004a74                  _socket
-                  0x0059d8                  _sysinit
-                  0x005cbe                  _wait_10ms
-                  0x005c96                  _wait_1ms
-                  0x005c52                  _wait_1us
-                  0x005be2                  _wiz_read_buf
-                  0x005b96                  _wiz_write_buf
+                  0x0059dc                  _sysinit
+                  0x005cc2                  _wait_10ms
+                  0x005c9a                  _wait_1ms
+                  0x005c56                  _wait_1us
+                  0x005be6                  _wiz_read_buf
+                  0x005b9a                  _wiz_write_buf
 
 Memory Configuration
 
@@ -872,13 +870,13 @@ __FUID3
 .comment
  *(.comment)
 
-.debug_info       0x000000       0x6166
+.debug_info       0x000000       0x6151
  *(.debug_info)
- .debug_info      0x000000       0x223f build/default/production/main.o
- .debug_info      0x00223f       0x252e build/default/production/init_drv.o
- .debug_info      0x00476d       0x1172 build/default/production/W5300_Drv_V1.2.6/w5300.o
- .debug_info      0x0058df        0x7c6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(write.eo)
- .debug_info      0x0060a5         0xc1 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(c30_uart.eo)
+ .debug_info      0x000000       0x222a build/default/production/main.o
+ .debug_info      0x00222a       0x252e build/default/production/init_drv.o
+ .debug_info      0x004758       0x1172 build/default/production/W5300_Drv_V1.2.6/w5300.o
+ .debug_info      0x0058ca        0x7c6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(write.eo)
+ .debug_info      0x006090         0xc1 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(c30_uart.eo)
  *(.gnu.linkonce.wi.*)
 
 .debug_abbrev     0x000000        0x64a
@@ -918,18 +916,18 @@ __FUID3
  *(.debug_macinfo)
 
 .debug_pubnames
-                  0x000000        0xa42
+                  0x000000        0xa37
  *(.debug_pubnames)
  .debug_pubnames
-                  0x000000        0x4b5 build/default/production/main.o
+                  0x000000        0x4aa build/default/production/main.o
  .debug_pubnames
-                  0x0004b5         0xb5 build/default/production/init_drv.o
+                  0x0004aa         0xb5 build/default/production/init_drv.o
  .debug_pubnames
-                  0x00056a        0x49b build/default/production/W5300_Drv_V1.2.6/w5300.o
+                  0x00055f        0x49b build/default/production/W5300_Drv_V1.2.6/w5300.o
  .debug_pubnames
-                  0x000a05         0x1c c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(write.eo)
+                  0x0009fa         0x1c c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(write.eo)
  .debug_pubnames
-                  0x000a21         0x21 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(c30_uart.eo)
+                  0x000a16         0x21 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(c30_uart.eo)
 
 .debug_ranges
  *(.debug_ranges)
@@ -2109,71 +2107,70 @@ __c30_signature
  __c30_signature
                   0x00019c          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libm-elf.a(dunpack.eo)
 
-.nbss               0x0800        0x3e4
- .nbss              0x0800        0x394 build/default/production/main.o
+.nbss               0x0800        0x3e2
+ .nbss              0x0800        0x392 build/default/production/main.o
                     0x0800                  _g_RxBuffer
                     0x0864                  _g_RxData
                     0x0865                  _g_Buffer
                     0x0866                  _g_UartFunCtionButton
                     0x0868                  _g_AdcBuffer
                     0x0872                  _g_AdcSample
-                    0x0886                  _Socket
-                    0x0888                  _g_MenuPage
-                    0x088a                  _iinchip_source_port
-                    0x088c                  _check_sendok_flag
-                    0x0894                  _status
-                    0x089c                  _EctsStatus
-                    0x0a0a                  _ButtonValue
-                    0x0a14                  _Adc7980Value
-                    0x0adc                  _SelfTest
-                    0x0aee                  _PageValue
-                    0x0b3e                  _ConnectCheck
-                    0x0b4a                  _ConnectCheckAck
-                    0x0b56                  _FireTestCheck
-                    0x0b76                  _FireTestCheckResult
- .nbss              0x0b94         0x50 build/default/production/W5300_Drv_V1.2.6/w5300.o
-                    0x0b9c                  _TXMEM_SIZE
-                    0x0bbc                  _RXMEM_SIZE
-                    0x0bdc                  _SOCK_INT
+                    0x0886                  _g_MenuPage
+                    0x0888                  _iinchip_source_port
+                    0x088a                  _check_sendok_flag
+                    0x0892                  _status
+                    0x089a                  _EctsStatus
+                    0x0a08                  _ButtonValue
+                    0x0a12                  _Adc7980Value
+                    0x0ada                  _SelfTest
+                    0x0aec                  _PageValue
+                    0x0b3c                  _ConnectCheck
+                    0x0b48                  _ConnectCheckAck
+                    0x0b54                  _FireTestCheck
+                    0x0b74                  _FireTestCheckResult
+ .nbss              0x0b92         0x50 build/default/production/W5300_Drv_V1.2.6/w5300.o
+                    0x0b9a                  _TXMEM_SIZE
+                    0x0bba                  _RXMEM_SIZE
+                    0x0bda                  _SOCK_INT
 
-.ndata              0x0be4         0x38
- .ndata             0x0be4         0x38 build/default/production/main.o
-                    0x0be4                  _g_AdcCount
-                    0x0be6                  _g_RelayLedStatus
-                    0x0be8                  _g_RelayChannel
-                    0x0bea                  _g_InputValue
-                    0x0bec                  _g_TimerCount
-                    0x0bee                  _g_OkButtonTimerCount
-                    0x0bf0                  _g_OkButtonTimerCountPre
-                    0x0bf2                  _g_TimerCounter
-                    0x0bf4                  _g_DataBuffer
-                    0x0c00                  _g_TempBuffer
-                    0x0c0c                  _g_Sw
-                    0x0c1a                  _g_SwSum
+.ndata              0x0be2         0x38
+ .ndata             0x0be2         0x38 build/default/production/main.o
+                    0x0be2                  _g_AdcCount
+                    0x0be4                  _g_RelayLedStatus
+                    0x0be6                  _g_RelayChannel
+                    0x0be8                  _g_InputValue
+                    0x0bea                  _g_TimerCount
+                    0x0bec                  _g_OkButtonTimerCount
+                    0x0bee                  _g_OkButtonTimerCountPre
+                    0x0bf0                  _g_TimerCounter
+                    0x0bf2                  _g_DataBuffer
+                    0x0bfe                  _g_TempBuffer
+                    0x0c0a                  _g_Sw
+                    0x0c18                  _g_SwSum
 
-.data               0x0c1c        0x200
- .data              0x0c1c        0x160 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(powers.XXelo)
-                    0x0c1c                  __npowers_
-                    0x0ccc                  __powers_
- .data              0x0d7c         0xa0 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(doprnt_cdfFnopuxX.XXeo)
+.data               0x0c1a        0x200
+ .data              0x0c1a        0x160 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(powers.XXelo)
+                    0x0c1a                  __npowers_
+                    0x0cca                  __powers_
+ .data              0x0d7a         0xa0 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(doprnt_cdfFnopuxX.XXeo)
 
-.dconst             0x0e1c         0x2a
- .dconst            0x0e1c         0x2a c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(doprnt_cdfFnopuxX.XXeo)
+.dconst             0x0e1a         0x2a
+ .dconst            0x0e1a         0x2a c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(doprnt_cdfFnopuxX.XXeo)
 
-.data               0x0e46         0x26
- .data              0x0e46         0x26 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(_iob.XXeo)
-                    0x0e46                  __Files
-                    0x0e48                  __iob
+.data               0x0e44         0x26
+ .data              0x0e44         0x26 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(_iob.XXeo)
+                    0x0e44                  __Files
+                    0x0e46                  __iob
 
-.bss                0x0e6c          0x6
- .bss               0x0e6c          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(_iob.XXeo)
-                    0x0e6c                  __sobuf
-                    0x0e6e                  __sibuf
-                    0x0e70                  __outdone
+.bss                0x0e6a          0x6
+ .bss               0x0e6a          0x6 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libc-elf.a(_iob.XXeo)
+                    0x0e6a                  __sobuf
+                    0x0e6c                  __sibuf
+                    0x0e6e                  __outdone
 
-.data               0x0e72          0x2
- .data              0x0e72          0x2 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(c30_uart.eo)
-                    0x0e72                  ___C30_UART
+.data               0x0e70          0x2
+ .data              0x0e70          0x2 c:/program files (x86)/microchip/mplab c30/bin/bin/../../lib\libpic30-elf.a(c30_uart.eo)
+                    0x0e70                  ___C30_UART
 
 .const              0x99d6        0x7d2 load address 0x0019d6  
  .const             0x99d6        0x7aa build/default/production/main.o
@@ -2183,7 +2180,7 @@ __c30_signature
                     0xa18a                  _IOPortSelectParam
                     0xa19c                  _ChipSelectParam
 
-.text             0x0021a8       0x3b3e
+.text             0x0021a8       0x3b42
  .text            0x0021a8       0x2d8c build/default/production/main.o
                   0x0021a8                  __U1RXInterrupt
                   0x00220c                  __T1Interrupt
@@ -2220,95 +2217,95 @@ __c30_signature
                   0x004d2c                  _loopback_udp
                   0x004dc8                  _UdpSetting
                   0x004efc                  _main
- .text            0x004f34        0xdb2 build/default/production/W5300_Drv_V1.2.6/w5300.o
+ .text            0x004f34        0xdb6 build/default/production/W5300_Drv_V1.2.6/w5300.o
                   0x004f34                  _IINCHIP_READ
                   0x004f40                  _IINCHIP_WRITE
-                  0x004f50                  _getMR
-                  0x004f5a                  _setMR
-                  0x004f68                  _getIR
-                  0x004f74                  _setIR
-                  0x004f84                  _getIMR
-                  0x004f90                  _setIMR
-                  0x004fa0                  _getSHAR
-                  0x004ff6                  _setSHAR
-                  0x005046                  _getGAR
-                  0x005082                  _setGAR
-                  0x0050b8                  _getSUBR
-                  0x0050dc                  _setSUBR
-                  0x005100                  _applySUBR
-                  0x00512a                  _clearSUBR
-                  0x00515c                  _getSIPR
-                  0x005198                  _setSIPR
-                  0x0051ce                  _getRTR
-                  0x0051da                  _setRTR
-                  0x0051ea                  _getRCR
-                  0x0051f8                  _setRCR
-                  0x005208                  _getPATR
-                  0x005214                  _getPTIMER
-                  0x005222                  _setPTIMER
-                  0x005232                  _getPMAGICR
-                  0x005240                  _setPMAGICR
-                  0x005250                  _getPSIDR
-                  0x00525c                  _getPDHAR
-                  0x0052b2                  _getUIPR
-                  0x0052ee                  _getUPORTR
-                  0x0052fa                  _getFMTUR
-                  0x005306                  _getPn_BRDYR
-                  0x005320                  _setPn_BRDYR
-                  0x005340                  _getPn_BDPTHR
-                  0x005358                  _setPn_BDPTHR
-                  0x005374                  _getIDR
-                  0x005380                  _getSn_MR
-                  0x005398                  _setSn_MR
-                  0x0053b4                  _getSn_CR
-                  0x0053ce                  _setSn_CR
-                  0x0053fe                  _getSn_IMR
-                  0x005418                  _setSn_IMR
-                  0x005438                  _getSn_IR
-                  0x005452                  _setSn_IR
-                  0x005472                  _getSn_SSR
-                  0x0054b2                  _getSn_DHAR
-                  0x00554a                  _setSn_DHAR
-                  0x0055ca                  _setSn_DPORTR
-                  0x0055e6                  _getSn_DIPR
-                  0x005650                  _setSn_DIPR
-                  0x0056a8                  _getSn_MSSR
-                  0x0056c0                  _setSn_MSSR
-                  0x0056dc                  _getSn_KPALVTR
-                  0x0056f8                  _setSn_KPALVTR
-                  0x00573a                  _getSn_TX_WRSR
-                  0x005780                  _setSn_TX_WRSR
-                  0x0057bc                  _getSn_TX_FSR
-                  0x005824                  _getSn_RX_RSR
-                  0x00588e                  _setSn_TX_FIFOR
-                  0x0058aa                  _getSn_RX_FIFOR
-                  0x0058c2                  _getSn_PROTOR
-                  0x0058dc                  _setSn_PROTOR
-                  0x005918                  _getSn_TOSR
-                  0x005932                  _setSn_TOSR
-                  0x005952                  _getSn_TTLR
-                  0x00596c                  _setSn_TTLR
-                  0x00598c                  _getSn_FRAGR
-                  0x0059a6                  _setSn_FRAGR
-                  0x0059c6                  _iinchip_init
-                  0x0059d8                  _sysinit
-                  0x005b96                  _wiz_write_buf
-                  0x005be2                  _wiz_read_buf
-                  0x005c2e                  _getIINCHIP_TxMAX
-                  0x005c40                  _getIINCHIP_RxMAX
-                  0x005c52                  _wait_1us
-                  0x005c96                  _wait_1ms
-                  0x005cbe                  _wait_10ms
+                  0x004f54                  _getMR
+                  0x004f5e                  _setMR
+                  0x004f6c                  _getIR
+                  0x004f78                  _setIR
+                  0x004f88                  _getIMR
+                  0x004f94                  _setIMR
+                  0x004fa4                  _getSHAR
+                  0x004ffa                  _setSHAR
+                  0x00504a                  _getGAR
+                  0x005086                  _setGAR
+                  0x0050bc                  _getSUBR
+                  0x0050e0                  _setSUBR
+                  0x005104                  _applySUBR
+                  0x00512e                  _clearSUBR
+                  0x005160                  _getSIPR
+                  0x00519c                  _setSIPR
+                  0x0051d2                  _getRTR
+                  0x0051de                  _setRTR
+                  0x0051ee                  _getRCR
+                  0x0051fc                  _setRCR
+                  0x00520c                  _getPATR
+                  0x005218                  _getPTIMER
+                  0x005226                  _setPTIMER
+                  0x005236                  _getPMAGICR
+                  0x005244                  _setPMAGICR
+                  0x005254                  _getPSIDR
+                  0x005260                  _getPDHAR
+                  0x0052b6                  _getUIPR
+                  0x0052f2                  _getUPORTR
+                  0x0052fe                  _getFMTUR
+                  0x00530a                  _getPn_BRDYR
+                  0x005324                  _setPn_BRDYR
+                  0x005344                  _getPn_BDPTHR
+                  0x00535c                  _setPn_BDPTHR
+                  0x005378                  _getIDR
+                  0x005384                  _getSn_MR
+                  0x00539c                  _setSn_MR
+                  0x0053b8                  _getSn_CR
+                  0x0053d2                  _setSn_CR
+                  0x005402                  _getSn_IMR
+                  0x00541c                  _setSn_IMR
+                  0x00543c                  _getSn_IR
+                  0x005456                  _setSn_IR
+                  0x005476                  _getSn_SSR
+                  0x0054b6                  _getSn_DHAR
+                  0x00554e                  _setSn_DHAR
+                  0x0055ce                  _setSn_DPORTR
+                  0x0055ea                  _getSn_DIPR
+                  0x005654                  _setSn_DIPR
+                  0x0056ac                  _getSn_MSSR
+                  0x0056c4                  _setSn_MSSR
+                  0x0056e0                  _getSn_KPALVTR
+                  0x0056fc                  _setSn_KPALVTR
+                  0x00573e                  _getSn_TX_WRSR
+                  0x005784                  _setSn_TX_WRSR
+                  0x0057c0                  _getSn_TX_FSR
+                  0x005828                  _getSn_RX_RSR
+                  0x005892                  _setSn_TX_FIFOR
+                  0x0058ae                  _getSn_RX_FIFOR
+                  0x0058c6                  _getSn_PROTOR
+                  0x0058e0                  _setSn_PROTOR
+                  0x00591c                  _getSn_TOSR
+                  0x005936                  _setSn_TOSR
+                  0x005956                  _getSn_TTLR
+                  0x005970                  _setSn_TTLR
+                  0x005990                  _getSn_FRAGR
+                  0x0059aa                  _setSn_FRAGR
+                  0x0059ca                  _iinchip_init
+                  0x0059dc                  _sysinit
+                  0x005b9a                  _wiz_write_buf
+                  0x005be6                  _wiz_read_buf
+                  0x005c32                  _getIINCHIP_TxMAX
+                  0x005c44                  _getIINCHIP_RxMAX
+                  0x005c56                  _wait_1us
+                  0x005c9a                  _wait_1ms
+                  0x005cc2                  _wait_10ms
 
-.dinit            0x005ce6        0x1ee
- .dinit           0x005ce6        0x1ee data_init
+.dinit            0x005cea        0x1ee
+ .dinit           0x005cea        0x1ee data_init
 
-.text             0x005ed4        0x1b4
- .text            0x005ed4        0x1b4 build/default/production/init_drv.o
-                  0x005ed4                  _InitGPIO
-                  0x005f12                  _InitTimer1
-                  0x005f42                  _InitTimer2
-                  0x005f70                  _InitUart1
-                  0x005fae                  _InitAdc
-                  0x00600a                  _InitSpi1
-                  0x006044                  _InitInterrupt
+.text             0x005ed8        0x1b4
+ .text            0x005ed8        0x1b4 build/default/production/init_drv.o
+                  0x005ed8                  _InitGPIO
+                  0x005f16                  _InitTimer1
+                  0x005f46                  _InitTimer2
+                  0x005f74                  _InitUart1
+                  0x005fb2                  _InitAdc
+                  0x00600e                  _InitSpi1
+                  0x006048                  _InitInterrupt
