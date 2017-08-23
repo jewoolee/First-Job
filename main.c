@@ -339,7 +339,7 @@ void __attribute__ ((interrupt, no_auto_psv)) _INT1Interrupt(void)
 	ButtonValue.s_NextButton == 0 ? printf("R 80,240,104,264,255,255,255,1\r"):NULL;    // 세부 점검 결과 화면에서 숫자 버튼 못쓰도록
 	if((g_InputValue != 0) && (ButtonValue.s_NextButton == 0))
 	{
-		printf("f %d,80,240\r",g_InputValue);
+		printf("f %d,80,240\r",g_InputValue);   // 키패드 입력하는부분
 	}
 
 	IFS1bits.INT1IF = 0;		// INT1 Interrupt Flag Clear;
@@ -530,7 +530,7 @@ void InnerVoltTest(void)      // 내부 전원 점검 (완료 vref. 5v, +15v, -15v 정상�
 	unsigned char n;
 	unsigned int *pADC_buf16;
 	printf("R 0,0,480,272,255,255,255,1\r"); // 화면 초기화
-	printf("i TESTING/InnerVoltTesting.png,0,0\r");  // 내부 전압 점검중 화면 출력
+	printf("i TESTING/InnerVoltTesting.jpg,0,0\r");  // 내부 전압 점검중 화면 출력
 	// 내부 전압 점검
 	while(1)
 	{
@@ -618,27 +618,27 @@ void InnerVoltTest(void)      // 내부 전원 점검 (완료 vref. 5v, +15v, -15v 정상�
 
 	if(SelfTest.s_Result == 0x0F) // 결과값 모두 정상이면 동작
 	{
-		printf("i MENU/ModeMenu.png,0,0\r");
+		printf("i MENU/ModeMenu.jpg,0,0\r");
 		PageValue.s_First[MODE_SEL] = 1;          // 모드 선택 화면 토글
 
-		printf("i ETC/VoltGood.png,0,0\r");
+		printf("i ETC/VoltGood.jpg,0,2\r");
 		PageValue.s_Check[CHK_VOLT] = 1;            // 내부 전압 정상 알람 토글
 		if(PORTEbits.RE6 == 0)// 자체 점검 플러그 인식 확인(자체점검플러그 미 연결시 =1, 자체점검플러그 연결시 = 0)
 		{
-			printf("i ETC/BitCheck.png,325,0\r");
+			printf("i ETC/BitCheck.jpg,325,2\r");
 			PageValue.s_Check[CHK_BIT] = 1;             // 자체 점검 가능 알람 토글
 
 			//통신점검 메시지 날리는 함수 
 			SendData(0); // 통신점검 메시지 g_DataBuffer 설정
 			// 인터럽트 0번 동작
 			// 점검 메시지 전송, 수신 결과 확인
-			if(PageValue.s_Check[CHK_LAN] == 1) printf("i ETC/LanConnect.png,165,0\r"); // 랜 연결상태가 정상일경우 랜 알람 메시지 출력
+			if(PageValue.s_Check[CHK_LAN] == 1) printf("i ETC/LanConnect.jpg,165,2\r"); // 랜 연결상태가 정상일경우 랜 알람 메시지 출력
 		}
 
 	}
 	else           // 내부 전압 비정상시
 	{
-		printf("i ERROR/InnerVoltFail.png,0,0\r");  // 내부 전압 비정상
+		printf("i ERROR/InnerVoltFail.jpg,0,0\r");  // 내부 전압 비정상
 		PageValue.s_First[VOLT_ERR] = 1;              // 내부 전압 비정상 토글
 		SelfTest.s_Result = 0; // 결과값 초기화
 	}
@@ -667,56 +667,57 @@ void TestResultCheck(unsigned int Label)
 	switch(Label)
 	{
 	case 1 : // 잔류, 도통/단선, 절연 점검 체크
-		printf("i MENU/SelfTestMenu.png,0,0\r"); // 자체 점검 메뉴 출력
+		printf("i MENU/SelfTestMenu.jpg,0,0\r"); // 자체 점검 메뉴 출력
 		AlramPrint();
-		if(PageValue.s_Self[SELF_RES_TEST]==1){ printf("i ETC/Check.png,233,73\r"); printf("i ETC/Check_.png,260,75\r"); n++;}
-		if(PageValue.s_Self[SELF_SHO_TEST]==1){ printf("i ETC/Check.png,233,96\r"); printf("i ETC/Check_.png,260,97\r"); n++;}
-		if(PageValue.s_Self[SELF_INS_TEST]==1){ printf("i ETC/Check.png,233,118\r"); printf("i ETC/Check_.png,260,120\r"); n++;}
+		if(PageValue.s_Self[SELF_RES_TEST]==1){ printf("i ETC/Check.jpg,196,69\r"); printf("i ETC/Check_.jpg,222,69\r"); n++;}
+		if(PageValue.s_Self[SELF_SHO_TEST]==1){ printf("i ETC/Check.jpg,196,93\r"); printf("i ETC/Check_.jpg,222,93\r"); n++;}
+		if(PageValue.s_Self[SELF_INS_TEST]==1){ printf("i ETC/Check.jpg,196,117\r"); printf("i ETC/Check_.jpg,222,117\r"); n++;}
 		if(n>0) printf("i ETC/Hint.png,0,205\r");     // 힌트 출력
 
 		break;
 	case 2 : // 잔류, 도통/단선, 절연 점검 체크
-		printf("i MENU/LineTestMenu.png,0,0\r"); // 점화 계통 점검 메뉴 출력
+		printf("i MENU/LineTestMenu.jpg,0,0\r"); // 점화 계통 점검 메뉴 출력
 		AlramPrint();
-		if(PageValue.s_Line[LINE_RES_TEST]==1){ printf("i ETC/Check.png,233,73\r"); printf("i ETC/Check_.png,260,75\r"); n++;}
-		if(PageValue.s_Line[LINE_SHO_TEST]==1){ printf("i ETC/Check.png,233,96\r"); printf("i ETC/Check_.png,260,97\r"); n++;}
-		if(PageValue.s_Line[LINE_INS_TEST]==1){ printf("i ETC/Check.png,233,118\r"); printf("i ETC/Check_.png,260,120\r"); n++;}
+        if(PageValue.s_Line[LINE_RES_TEST]==1){ printf("i ETC/Check.jpg,196,69\r"); printf("i ETC/Check_.jpg,222,69\r"); n++;}
+		if(PageValue.s_Line[LINE_SHO_TEST]==1){ printf("i ETC/Check.jpg,196,93\r"); printf("i ETC/Check_.jpg,222,93\r"); n++;}
+		if(PageValue.s_Line[LINE_INS_TEST]==1){ printf("i ETC/Check.jpg,196,117\r"); printf("i ETC/Check_.jpg,222,117\r"); n++;}
 		if(n>0) printf("i ETC/Hint.png,0,205\r");     // 힌트 출력
 		break;
 	case 3:
 
 		AlramPrint();
-		if(PageValue.s_FireRecvResult_1[MSL_RESULT]==1)   { printf("i ETC/Check.png,197,73\r"); printf("i ETC/Check_.png,223,75\r"); n++;}
-		if(PageValue.s_FireRecvResult_1[EXT_RESULT]==1)   { printf("i ETC/Check.png,197,96\r"); printf("i ETC/Check_.png,223,97\r"); n++;}
-		if(PageValue.s_FireRecvResult_1[EB_RESULT]==1)    { printf("i ETC/Check.png,197,118\r"); printf("i ETC/Check_.png,223,120\r");n++;}
-		if(PageValue.s_FireRecvResult_1[BAT_RESULT]==1)   { printf("i ETC/Check.png,197,140\r"); printf("i ETC/Check_.png,223,142\r"); n++;}
-		if(PageValue.s_FireRecvResult_1[ABAT_RESULT]==1)  { printf("i ETC/Check.png,197,162\r"); printf("i ETC/Check_.png,223,164\r");n++;}
-		if(PageValue.s_FireRecvResult_1[BDU_RESULT]==1)   { printf("i ETC/Check.png,197,184\r"); printf("i ETC/Check_.png,223,186\r"); n++;}
-		if(PageValue.s_FireRecvResult_1[ARMING_RESULT]==1){ printf("i ETC/Check.png,197,207\r"); printf("i ETC/Check_.png,223,209\r"); n++;}
-		if(PageValue.s_FireRecvResult_1[INTARM_RESULT]==1){ printf("i ETC/Check.png,440,73\r"); printf("i ETC/Check_.png,465,75\r"); n++;}
-		if(PageValue.s_FireRecvResult_1[INT_RESULT]==1)   { printf("i ETC/Check.png,440,95\r"); printf("i ETC/Check_.png,465,97\r");n++;}
-		if(n>0) printf("i ETC/Hint_1.png,240,175\r");     // 힌트 출력
+		if(PageValue.s_FireRecvResult_1[MSL_RESULT]==1)   { printf("i ETC/Check.jpg,176,70\r"); printf("i ETC/Check_.jpg,205,70\r"); n++;}
+		if(PageValue.s_FireRecvResult_1[EXT_RESULT]==1)   { printf("i ETC/Check.jpg,176,94\r"); printf("i ETC/Check_.jpg,205,94\r"); n++;}
+		if(PageValue.s_FireRecvResult_1[EB_RESULT]==1)    { printf("i ETC/Check.jpg,176,118\r"); printf("i ETC/Check_.jpg,205,118\r");n++;}
+		if(PageValue.s_FireRecvResult_1[BAT_RESULT]==1)   { printf("i ETC/Check.jpg,176,142\r"); printf("i ETC/Check_.jpg,205,142\r"); n++;}
+		if(PageValue.s_FireRecvResult_1[ABAT_RESULT]==1)  { printf("i ETC/Check.jpg,176,166\r"); printf("i ETC/Check_.jpg,205,166\r");n++;}
+		if(PageValue.s_FireRecvResult_1[BDU_RESULT]==1)   { printf("i ETC/Check.jpg,176,190\r"); printf("i ETC/Check_.jpg,205,190\r"); n++;}
+		if(PageValue.s_FireRecvResult_1[ARMING_RESULT]==1){ printf("i ETC/Check.jpg,176,214\r"); printf("i ETC/Check_.jpg,205,214\r"); n++;}
+		if(PageValue.s_FireRecvResult_1[INTARM_RESULT]==1){ printf("i ETC/Check.jpg,411,69\r"); printf("i ETC/Check_.jpg,440,69\r"); n++;}
+		if(PageValue.s_FireRecvResult_1[INT_RESULT]==1)   { printf("i ETC/Check.jpg,411,93\r"); printf("i ETC/Check_.jpg,440,93\r");n++;}
+		if(n>0) printf("i ETC/Hint_1.png,242,175\r");     // 힌트 출력
 		printf("R 80,240,104,264,255,255,255,1\r");
 
 		break;
 	case 4:
 
 		AlramPrint();
-		if(PageValue.s_FireRecvResult_2[MSL_RESULT]==1)   { printf("i ETC/Check.png,197,73\r"); printf("i ETC/Check_.png,223,75\r"); n++;}
-		if(PageValue.s_FireRecvResult_2[EXT_RESULT]==1)   { printf("i ETC/Check.png,197,96\r"); printf("i ETC/Check_.png,223,97\r"); n++;}
-		if(PageValue.s_FireRecvResult_2[EB_RESULT]==1)    { printf("i ETC/Check.png,197,118\r"); printf("i ETC/Check_.png,223,120\r");n++;}
-		if(PageValue.s_FireRecvResult_2[BAT_RESULT]==1)   { printf("i ETC/Check.png,197,140\r"); printf("i ETC/Check_.png,223,142\r"); n++;}
-		if(PageValue.s_FireRecvResult_2[ABAT_RESULT]==1)  { printf("i ETC/Check.png,197,162\r"); printf("i ETC/Check_.png,223,164\r");n++;}
-		if(PageValue.s_FireRecvResult_2[BDU_RESULT]==1)   { printf("i ETC/Check.png,197,184\r"); printf("i ETC/Check_.png,223,186\r"); n++;}
-		if(PageValue.s_FireRecvResult_2[ARMING_RESULT]==1){ printf("i ETC/Check.png,197,207\r"); printf("i ETC/Check_.png,223,209\r"); n++;}
-		if(PageValue.s_FireRecvResult_2[INTARM_RESULT]==1){ printf("i ETC/Check.png,440,73\r"); printf("i ETC/Check_.png,465,75\r"); n++;}
-		if(PageValue.s_FireRecvResult_2[INT_RESULT]==1)   { printf("i ETC/Check.png,440,95\r"); printf("i ETC/Check_.png,465,97\r");n++;}
-		if(n>0) printf("i ETC/Hint_1.png,240,175\r");     // 힌트 출력
+		if(PageValue.s_FireRecvResult_2[MSL_RESULT]==1)   { printf("i ETC/Check.jpg,176,70\r"); printf("i ETC/Check_.jpg,205,70\r"); n++;}
+		if(PageValue.s_FireRecvResult_2[EXT_RESULT]==1)   { printf("i ETC/Check.jpg,176,94\r"); printf("i ETC/Check_.jpg,205,94\r"); n++;}
+		if(PageValue.s_FireRecvResult_2[EB_RESULT]==1)    { printf("i ETC/Check.jpg,176,118\r"); printf("i ETC/Check_.jpg,205,118\r");n++;}
+		if(PageValue.s_FireRecvResult_2[BAT_RESULT]==1)   { printf("i ETC/Check.jpg,176,142\r"); printf("i ETC/Check_.jpg,205,142\r"); n++;}
+		if(PageValue.s_FireRecvResult_2[ABAT_RESULT]==1)  { printf("i ETC/Check.jpg,176,166\r"); printf("i ETC/Check_.jpg,205,166\r");n++;}
+		if(PageValue.s_FireRecvResult_2[BDU_RESULT]==1)   { printf("i ETC/Check.jpg,176,190\r"); printf("i ETC/Check_.jpg,205,190\r"); n++;}
+		if(PageValue.s_FireRecvResult_2[ARMING_RESULT]==1){ printf("i ETC/Check.jpg,176,214\r"); printf("i ETC/Check_.jpg,205,214\r"); n++;}
+		if(PageValue.s_FireRecvResult_2[INTARM_RESULT]==1){ printf("i ETC/Check.jpg,411,69\r"); printf("i ETC/Check_.jpg,440,69\r"); n++;}
+		if(PageValue.s_FireRecvResult_2[INT_RESULT]==1)    { printf("i ETC/Check.jpg,411,93\r"); printf("i ETC/Check_.jpg,440,93\r");n++;}
+		if(n>0) printf("i ETC/Hint_1.png,242,175\r");       // 힌트 출력
 		printf("R 80,240,104,264,255,255,255,1\r");
 
 		break;
 	}
 }
+
 void RelayControl() // 타이머 카운터로 인해 600ms 마다 반복동작함.
 {
 	unsigned int Count = 0;
@@ -746,9 +747,9 @@ void InitRelay(void)
 }
 void AlramPrint()
 {
-	if(PageValue.s_Check[CHK_VOLT] == 1) printf("i ETC/VoltGood.png,0,0\r");        // 내부 전원 정상시 알람 출력
-	if(PageValue.s_Check[CHK_BIT] == 1) printf("i ETC/BitCheck.png,325,0\r");        // 자체 점검 가능 알람 출력
-	if(PageValue.s_Check[CHK_LAN] == 1) printf("i ETC/LanConnect.png,165,0\r");        // LAN 연결상태 확인 알람
+	if(PageValue.s_Check[CHK_VOLT] == 1) printf("i ETC/VoltGood.jpg,0,2\r");        // 내부 전원 정상시 알람 출력
+	if(PageValue.s_Check[CHK_BIT] == 1) printf("i ETC/BitCheck.jpg,325,2\r");        // 자체 점검 가능 알람 출력
+	if(PageValue.s_Check[CHK_LAN] == 1) printf("i ETC/LanConnect.jpg,165,2\r");        // LAN 연결상태 확인 알람
 }
 void RelayLedControl(unsigned char Ch, unsigned char On_Off)
 {
@@ -816,46 +817,66 @@ void ResidualVoltTest(void)     // 잔류 전압 점검(완료  ADC값 검증 필요)FORI0번 
 }
 void ResidualVoltTestResult(void)
 {
-	printf("i Result/ResidualVoltResult.png,0,0\r");
+	printf("i Result/ResidualVoltResult.jpg,0,0\r");
 	AlramPrint();
 
 	int ChannelCount;
-	int x=136;
-	int y=72;
-	int z=400;
+	int x=172;
+	int y=71;
+	int z=432;
 	for(ChannelCount=1; ChannelCount < 9 ; ChannelCount++)
 	{
-		if(EctsStatus.ResidualVoltTestResult[ChannelCount].ResidualVoltTestStatus == 0) printf("f O,%d,%d\r",x, y);
-		else printf("f X,%d,%d\r",x, y);
+		if(EctsStatus.ResidualVoltTestResult[ChannelCount].ResidualVoltTestStatus == 0) printf("i ETC/Check_OK.jpg,%d,%d\r",x,y);
+		else  printf("i ETC/Check_FAIL.jpg,%d,%d\r",x,y);
 		y= y + 24;
 	}
-	y= 72;
+	y= 71;
 	for(ChannelCount=9; ChannelCount < 17 ; ChannelCount++)
 	{
-		if(EctsStatus.ResidualVoltTestResult[ChannelCount].ResidualVoltTestStatus == 0) printf("f O,%d,%d\r",z, y);
-		else printf("f X,%d,%d\r",z, y);
+		if(EctsStatus.ResidualVoltTestResult[ChannelCount].ResidualVoltTestStatus == 0) printf("i ETC/Check_OK.jpg,%d,%d\r",z,y);
+		else printf("i ETC/Check_FAIL.jpg,%d,%d\r",z,y);
 		y= y + 24;
 	}
 
 }
+
 void ResidualVoltTestResultDebug(void)
 {
-	printf("i Result_D/ResidualVoltResult_D.png,0,0\r");
+	printf("i Result_D/ResidualVoltResult_D.jpg,0,0\r");
 	AlramPrint();
 	int ChannelCount;
-	int x=136;
-	int y=72;
-	int z=400;
+    char buf[10];
+    int num[10];
+   
+	int x[5]= {140, 155, 170, 190, 205 };
+	int y = 72;
+	int z[5]= {400, 415, 430, 450, 465 };
 	for(ChannelCount=0; ChannelCount < 8 ; ChannelCount++)
 	{
-		printf("f %.2f,%d,%d\r",EctsStatus.ResidualVoltTestResult[ChannelCount].ResidualVoltTestValue,x, y);
-		y= y + 24;
+        sprintf(buf, "%0.2f",EctsStatus.ResidualVoltTestResult[ChannelCount].ResidualVoltTestValue);    // 실수 문자열 배열에 저장
+        num[0] = strcspn(buf[0],"0123456789");
+        printf("i STRING/%d.jpg,%d,%d\r",num[0],x[0],y);
+        if(buf[1]=='.') printf("i STRING/POT.jpg,%d,%d\r",x[1],y);
+        num[1] = strcspn(buf[2],"0123456789");
+        printf("i STRING/%d.jpg,%d,%d\r",num[1],x[2],y);
+        num[2] = strcspn(buf[3],"0123456789");
+        printf("i STRING/%d.jpg,%d,%d\r",num[2],x[3],y);
+        printf("i STRING/V.jpg,%d,%d\r",x[4],y);
+        y=y+24;
 	}
 	y= 72;
 	for(ChannelCount=8; ChannelCount < 16 ; ChannelCount++)
 	{
-		printf("f %.2f,%d,%d\r",EctsStatus.ResidualVoltTestResult[ChannelCount].ResidualVoltTestValue,z, y);
-		y= y + 24;
+		sprintf(buf, "%0.2f",EctsStatus.ResidualVoltTestResult[ChannelCount].ResidualVoltTestValue);    // 실수 문자열 배열에 저장
+        num[3] = strcspn(buf[0],"0123456789");
+        printf("i STRING/%d.jpg,%d,%d\r",num[0],z[0],y);
+        if(buf[1]=='.') printf("i STRING/POT.jpg,%d,%d\r",x[1],y);
+        num[4] = strcspn(buf[2],"0123456789");
+        printf("i STRING/%d.jpg,%d,%d\r",num[1],z[2],y);
+        num[5] = strcspn(buf[3],"0123456789");
+        printf("i STRING/%d.jpg,%d,%d\r",num[2],z[3],y);
+        printf("i STRING/V.jpg,%d,%d\r",z[4],y);
+        y=y+24;
 	}
 }
 // </editor-fold>
@@ -910,48 +931,69 @@ void InsulationTest(void)       // 절연 점검(완료 ADC값 검증 필요)FORI0번 건너 �
 }
 void InsulationTestResult(void)
 {
-	printf("i Result/InsulResult.png,0,0\r");
+	printf("i Result/InsulResult.jpg,0,0\r");
 	AlramPrint();
 
 	int ChannelCount;
-	int x=136;
-	int y=72;
-	int z=400;
+	int x=172;
+	int y=71;
+	int z=432;
 	for(ChannelCount=1; ChannelCount < 9 ; ChannelCount++)
 	{
-		if(EctsStatus.InsulTestResult[ChannelCount].InsulTestStatus == 0) printf("f O,%d,%d\r",x, y);
-		else printf("f X,%d,%d\r",x, y);
+		if(EctsStatus.InsulTestResult[ChannelCount].InsulTestStatus == 0) printf("i ETC/Check_OK.jpg,%d,%d\r",x,y);
+		else printf("i ETC/Check_FAIL.jpg,%d,%d\r",x,y);
 		y= y + 24;
 	}
-	y= 72;
+	y= 71;
 	for(ChannelCount=9; ChannelCount < 17 ; ChannelCount++)
 	{
-		if(EctsStatus.InsulTestResult[ChannelCount].InsulTestStatus == 0) printf("f O,%d,%d\r",z, y);
-		else printf("f X,%d,%d\r",z, y);
+		if(EctsStatus.InsulTestResult[ChannelCount].InsulTestStatus == 0) printf("i ETC/Check_OK.jpg,%d,%d\r",z,y);
+		else printf("i ETC/Check_FAIL.jpg,%d,%d\r",z,y);
 		y= y + 24;
 	}
 
 }
 void InsulationTestResultDebug(void)
 {
-	printf("i Result_D/InsulResult_D.png,0,0\r");
+	printf("i Result_D/InsulResult_D.jpg,0,0\r");
 	AlramPrint();
-
-	int ChannelCount;
-	int x=136;
-	int y=72;
-	int z=400;
-	for(ChannelCount=1; ChannelCount < 9 ; ChannelCount++)
+int ChannelCount;
+   
+     char buf[10];
+    int num[10];
+   
+	int x[5]= {140, 155, 170, 190, 205 };
+	int y = 72;
+	int z[5]= {400, 415, 430, 450, 465 };
+	for(ChannelCount=0; ChannelCount < 8 ; ChannelCount++)
 	{
-		printf("f %.2f,%d,%d\r",EctsStatus.InsulTestResult[ChannelCount].InsulTestValue,x, y);
-		y= y + 24;
+        sprintf(buf, "%0.2f",EctsStatus.InsulTestResult[ChannelCount].InsulTestValue);    // 실수 문자열 배열에 저장
+        num[0] = strcspn(buf[0],"0123456789");
+        printf("i STRING/%d.jpg,%d,%d\r",num[0],x[0],y);
+        if(buf[1]=='.') printf("i STRING/POT.jpg,%d,%d\r",x[1],y);
+        num[1] = strcspn(buf[2],"0123456789");
+        printf("i STRING/%d.jpg,%d,%d\r",num[1],x[2],y);
+        num[2] = strcspn(buf[3],"0123456789");
+        printf("i STRING/%d.jpg,%d,%d\r",num[2],x[3],y);
+        printf("i STRING/V.jpg,%d,%d\r",x[4],y);
+        y=y+24;
 	}
 	y= 72;
-	for(ChannelCount=9; ChannelCount < 17 ; ChannelCount++)
+	for(ChannelCount=8; ChannelCount < 16 ; ChannelCount++)
 	{
-		printf("f %.2f,%d,%d\r",EctsStatus.InsulTestResult[ChannelCount].InsulTestValue,z, y);
-		y= y + 24;
+		sprintf(buf, "%0.2f",EctsStatus.InsulTestResult[ChannelCount].InsulTestValue);    // 실수 문자열 배열에 저장
+        num[3] = strcspn(buf[0],"0123456789");
+        printf("i STRING/%d.jpg,%d,%d\r",num[0],z[0],y);
+        if(buf[1]=='.') printf("i STRING/POT.jpg,%d,%d\r",x[1],y);
+        num[4] = strcspn(buf[2],"0123456789");
+        printf("i STRING/%d.jpg,%d,%d\r",num[1],z[2],y);
+        num[5] = strcspn(buf[3],"0123456789");
+        printf("i STRING/%d.jpg,%d,%d\r",num[2],z[3],y);
+        printf("i STRING/V.jpg,%d,%d\r",z[4],y);
+        y=y+24;
 	}
+    
+	
 }
 // </editor-fold>
 
@@ -1004,7 +1046,7 @@ void ShortTest(void)            // 도통단선점검(완료 ADC값 검증 필요)FORI0번 건�
 }
 void ShortTestResult(void)
 {
-	printf("i Result/ShortResult.png,0,0\r");
+	printf("i Result/ShortResult.jpg,0,0\r");
 	AlramPrint();
 	int ChannelCount;
 	int x=136;
@@ -1012,36 +1054,55 @@ void ShortTestResult(void)
 	int z=400;
 	for(ChannelCount=1; ChannelCount < 9 ; ChannelCount++)
 	{
-		if(EctsStatus.ShortTestResult[ChannelCount].ShortTestStatus == 0) printf("f O,%d,%d\r",x, y);
-		else printf("f X,%d,%d\r",x, y);
+		if(EctsStatus.ShortTestResult[ChannelCount].ShortTestStatus == 0) printf("i ETC/Check_OK.jpg,%d,%d\r",x,y);
+		else printf("i ETC/Check_FAIL.jpg,%d,%d\r",x,y);
 		y= y + 24;
 	}
-	y= 72;
+	y= 71;
 	for(ChannelCount=9; ChannelCount < 17 ; ChannelCount++)
 	{
-		if(EctsStatus.ShortTestResult[ChannelCount].ShortTestStatus == 0) printf("f O,%d,%d\r",z, y);
-		else printf("f X,%d,%d\r",z, y);
+		if(EctsStatus.ShortTestResult[ChannelCount].ShortTestStatus == 0) printf("i ETC/Check_OK.jpg,%d,%d\r",z,y);
+		else  printf("i ETC/Check_FAIL.jpg,%d,%d\r",z,y);
 		y= y + 24;
 	}
 }
 void ShortTestResultDebug(void)
 {
-	printf("i Result_D/ShortResult_D.png,0,0\r");
+	printf("i Result_D/ShortResult_D.jpg,0,0\r");
 	AlramPrint();
+   
+    char buf[10];
+    int num[10];
 	int ChannelCount;
-	int x=136;
-	int y=72;
-	int z=400;
-	for(ChannelCount=1; ChannelCount < 9 ; ChannelCount++)
+    int x[5]= {140, 155, 170, 190, 205 };
+	int y = 72;
+	int z[5]= {400, 415, 430, 450, 465 };
+	for(ChannelCount=0; ChannelCount < 8 ; ChannelCount++)
 	{
-		printf("f %.2f,%d,%d\r",EctsStatus.ShortTestResult[ChannelCount].ShortTestValue,x, y);
-		y= y + 24;
+        sprintf(buf, "%0.2f",EctsStatus.ShortTestResult[ChannelCount].ShortTestValue);    // 실수 문자열 배열에 저장
+        num[0] = strcspn(buf[0],"0123456789");
+        printf("i STRING/%d.jpg,%d,%d\r",num[0],x[0],y);
+        if(buf[1]=='.') printf("i STRING/POT.jpg,%d,%d\r",x[1],y);
+        num[1] = strcspn(buf[2],"0123456789");
+        printf("i STRING/%d.jpg,%d,%d\r",num[1],x[2],y);
+        num[2] = strcspn(buf[3],"0123456789");
+        printf("i STRING/%d.jpg,%d,%d\r",num[2],x[3],y);
+        printf("i STRING/V.jpg,%d,%d\r",x[4],y);
+        y=y+24;
 	}
 	y= 72;
-	for(ChannelCount=9; ChannelCount < 17 ; ChannelCount++)
+	for(ChannelCount=8; ChannelCount < 16 ; ChannelCount++)
 	{
-		printf("f %.2f,%d,%d\r",EctsStatus.ShortTestResult[ChannelCount].ShortTestValue,x, y);
-		y= y + 24;
+		sprintf(buf, "%0.2f",EctsStatus.ShortTestResult[ChannelCount].ShortTestValue);    // 실수 문자열 배열에 저장
+        num[3] = strcspn(buf[0],"0123456789");
+        printf("i STRING/%d.jpg,%d,%d\r",num[0],z[0],y);
+        if(buf[1]=='.') printf("i STRING/POT.jpg,%d,%d\r",x[1],y);
+        num[4] = strcspn(buf[2],"0123456789");
+        printf("i STRING/%d.jpg,%d,%d\r",num[1],z[2],y);
+        num[5] = strcspn(buf[3],"0123456789");
+        printf("i STRING/%d.jpg,%d,%d\r",num[2],z[3],y);
+        printf("i STRING/V.jpg,%d,%d\r",z[4],y);
+        y=y+24;
 	}
 }
 // </editor-fold>
@@ -1105,7 +1166,7 @@ void MenuDisplay(void)
 		case  0x03 :
 			if(ButtonValue.s_OkButton == 1)
 			{
-				printf("i MENU/FireTestMenu.png,0,0\r");
+				printf("i MENU/FireTestMenu.jpg,0,0\r");
 				AlramPrint();
 				PageValue.s_First[MODE_SEL] = 0;
 				PageValue.s_Fire[FIRE_TEST] = 1;
@@ -1128,12 +1189,12 @@ void MenuDisplay(void)
 			{
 				// <editor-fold defaultstate="collapsed" desc="점검">
 			case 1:
-				printf("i TESTING/ResidualTesting.png,0,0\r");
+				printf("i TESTING/ResidualTesting.jpg,0,0\r");
 				AlramPrint();
 				ResidualVoltTest();
 				PageValue.s_Self[SELF_RES_TEST] = 1;  // 자체 점검 완료 플래그
 
-				printf("i MENU/SelfTestMenu.png,0,0\r"); // 점화계통 점검 메뉴 출력
+				printf("i MENU/SelfTestMenu.jpg,0,0\r"); // 점화계통 점검 메뉴 출력
 				AlramPrint();
 				TestResultCheck(1);                  // 점검 결과 표시
 				// 점검 완료시 버튼 플래그 초기화
@@ -1142,11 +1203,11 @@ void MenuDisplay(void)
 				g_InputValue = 0;
 				break;
 			case 2:
-				printf("i TESTING/ShortTesting.png,0,0\r");
+				printf("i TESTING/ShortTesting.jpg,0,0\r");
 				AlramPrint();
 				ShortTest();
 				PageValue.s_Self[SELF_SHO_TEST] = 1;  // 도통/단선 점검
-				printf("i MENU/SelfTestMenu.png,0,0\r"); // 점화계통 점검 메뉴 출력
+				printf("i MENU/SelfTestMenu.jpg,0,0\r"); // 점화계통 점검 메뉴 출력
 				AlramPrint();
 				TestResultCheck(1);                  // 점검 결과 표시
 				ButtonValue.s_OkButton = 0;       // 확인 버튼 초기화
@@ -1156,11 +1217,11 @@ void MenuDisplay(void)
 				g_InputValue = 0;
 				break;
 			case 3:
-				printf("i TESTING/InsulTesting.png,0,0\r");
+				printf("i TESTING/InsulTesting.jpg,0,0\r");
 				AlramPrint();
 				InsulationTest();
 				PageValue.s_Self[SELF_INS_TEST] = 1;  // 절연 점검
-				printf("i MENU/SelfTestMenu.png,0,0\r"); // 점화계통 점검 메뉴 출력
+				printf("i MENU/SelfTestMenu.jpg,0,0\r"); // 점화계통 점검 메뉴 출력
 				AlramPrint();
 				TestResultCheck(1);                  // 점검 결과 표시
 				ButtonValue.s_OkButton = 0;       // 확인 버튼 초기화
@@ -1171,17 +1232,17 @@ void MenuDisplay(void)
 				break;
 			case 4:
 
-				printf("i TESTING/ResidualTesting.png,0,0\r");
+				printf("i TESTING/ResidualTesting.jpg,0,0\r");
 				AlramPrint();
 				ResidualVoltTest();
 				PageValue.s_Self[SELF_RES_TEST] = 1;  // 자체 점검
 
-				printf("i TESTING/ShortTesting.png,0,0\r");
+				printf("i TESTING/ShortTesting.jpg,0,0\r");
 				AlramPrint();
 				ShortTest();
 				PageValue.s_Self[SELF_SHO_TEST] = 1;  // 도통/단선 점검
 
-				printf("i TESTING/InsulTesting.png,0,0\r");
+				printf("i TESTING/InsulTesting.jpg,0,0\r");
 				AlramPrint();
 				InsulationTest();
 				PageValue.s_Self[SELF_INS_TEST] = 1;  // 절연 점검
@@ -1249,7 +1310,7 @@ void MenuDisplay(void)
 				g_MenuPage = 1; //g_MenuPage == 0 ? 1:0;   //1
 				break;
 			case 1:
-				printf("i MENU/ModeMenu.png,0,0\r");    // 모드 선택 화면 출력
+				printf("i MENU/ModeMenu.jpg,0,0\r");    // 모드 선택 화면 출력
 				AlramPrint();
 				PageValue.s_First[MODE_SEL] = 1;           // 모드 선택 화면 토글
 				PageValue.s_Self[SELF_TEST] = 0;           // 자체 점검 토글(초기화)
@@ -1271,11 +1332,11 @@ void MenuDisplay(void)
 			{
 				// <editor-fold defaultstate="collapsed" desc="점검">
 			case 1:
-				printf("i TESTING/ResidualTesting.png,0,0\r");
+				printf("i TESTING/ResidualTesting.jpg,0,0\r");
 				AlramPrint();
 				ResidualVoltTest();
 				PageValue.s_Line[LINE_RES_TEST] = 1;  // 자체 점검 완료 플래그
-				printf("i MENU/LineTestMenu.png,0,0\r"); // 자체 점검 메뉴 출력
+				printf("i MENU/LineTestMenu.jpg,0,0\r"); // 자체 점검 메뉴 출력
 				AlramPrint();
 				TestResultCheck(2);                  // 점검 결과 표시
 				// 점검 완료시 버튼 플래그 초기화
@@ -1284,11 +1345,11 @@ void MenuDisplay(void)
 				g_InputValue = 0;
 				break;
 			case 2:
-				printf("i TESTING/ShortTesting.png,0,0\r");
+				printf("i TESTING/ShortTesting.jpg,0,0\r");
 				AlramPrint();
 				ShortTest();
 				PageValue.s_Line[LINE_SHO_TEST] = 1;  // 도통/단선 점검
-				printf("i MENU/LineTestMenu.png,0,0\r"); // 자체 점검 메뉴 출력
+				printf("i MENU/LineTestMenu.jpg,0,0\r"); // 자체 점검 메뉴 출력
 				AlramPrint();
 				TestResultCheck(2);                  // 점검 결과 표시
 				ButtonValue.s_OkButton = 0;       // 확인 버튼 초기화
@@ -1298,11 +1359,11 @@ void MenuDisplay(void)
 				g_InputValue = 0;
 				break;
 			case 3:
-				printf("i TESTING/InsulTesting.png,0,0\r");
+				printf("i TESTING/InsulTesting.jpg,0,0\r");
 				AlramPrint();
 				InsulationTest();
 				PageValue.s_Line[LINE_INS_TEST] = 1;  // 절연 점검
-				printf("i MENU/LineTestMenu.png,0,0\r"); // 자체 점검 메뉴 출력
+				printf("i MENU/LineTestMenu.jpg,0,0\r"); // 자체 점검 메뉴 출력
 				AlramPrint();
 				TestResultCheck(2);                  // 점검 결과 표시
 
@@ -1314,15 +1375,15 @@ void MenuDisplay(void)
 				break;
 			case 4:
 				PageValue.s_Line[LINE_RES_TEST] = 1;  // 자체 점검
-				printf("i TESTING/ResidualTesting.png,0,0\r");
+				printf("i TESTING/ResidualTesting.jpg,0,0\r");
 				AlramPrint();
 				ResidualVoltTest();
 				PageValue.s_Line[LINE_SHO_TEST] = 1;  // 도통/단선 점검
-				printf("i TESTING/ShortTesting.png,0,0\r");
+				printf("i TESTING/ShortTesting.jpg,0,0\r");
 				AlramPrint();
 				ShortTest();
 				PageValue.s_Line[LINE_INS_TEST] = 1;  // 절연 점검
-				printf("i TESTING/InsulTesting.png,0,0\r");
+				printf("i TESTING/InsulTesting.jpg,0,0\r");
 				AlramPrint();
 				InsulationTest();
 				TestResultCheck(2);                  // 점검 결과 표시
@@ -1384,7 +1445,7 @@ void MenuDisplay(void)
 				g_MenuPage = 1; //g_MenuPage == 0 ? 1:0;   //1
 				break;
 			case 1:
-				printf("i MENU/ModeMenu.png,0,0\r");    // 모드 선택 화면 출력
+				printf("i MENU/ModeMenu.jpg,0,0\r");    // 모드 선택 화면 출력
 				AlramPrint();
 				PageValue.s_First[MODE_SEL] = 1;           // 모드 선택 화면 토글
 				PageValue.s_Line[LINE_TEST] = 0;           // 자체 점검 토글(초기화)
@@ -1403,7 +1464,7 @@ void MenuDisplay(void)
 			{
 				// <editor-fold defaultstate="collapsed" desc="발사 계통 점검 세부 메뉴 선택">
 			case  0x01 :
-				printf("i MENU/FireEachTestMenu_1.png,0,0\r");                              // 1호탄 개별 점검
+				printf("i MENU/FireEachTestMenu_1.jpg,0,0\r");                              // 1호탄 개별 점검
 				TestResultCheck(3);             // 점검 결과 체크 표시
 				PageValue.s_Fire[FIRE_TEST_EACH_1] = 1;
 				PageValue.s_Fire[FIRE_TEST] = 0;
@@ -1411,7 +1472,7 @@ void MenuDisplay(void)
 				g_InputValue = 0;
 				break;
 			case  0x02 :
-				printf("i MENU/FireTotalTestMenu_1.png,0,0\r");                              // 1호탄 통합 점검
+				printf("i MENU/FireTotalTestMenu_1.jpg,0,0\r");                              // 1호탄 통합 점검
 				TestResultCheck(3);             // 점검 결과 체크 표시
 				PageValue.s_Fire[FIRE_TEST_TOTAL_1] = 1;
 				PageValue.s_Fire[FIRE_TEST] = 0;
@@ -1419,7 +1480,7 @@ void MenuDisplay(void)
 				g_InputValue = 0;
 				break;
 			case  0x03 :
-				printf("i MENU/FireEachTestMenu_2.png,0,0\r");                              // 2호탄 개별 점검
+				printf("i MENU/FireEachTestMenu_2.jpg,0,0\r");                              // 2호탄 개별 점검
 				TestResultCheck(4);             // 점검 결과 체크 표시
 				PageValue.s_Fire[FIRE_TEST_EACH_2] = 1;
 				PageValue.s_Fire[FIRE_TEST] = 0;
@@ -1427,7 +1488,7 @@ void MenuDisplay(void)
 				g_InputValue = 0;
 				break;
 			case  0x04 :
-				printf("i MENU/FireTotalTestMenu_2.png,0,0\r");                              // 2호탄 통합 점검
+				printf("i MENU/FireTotalTestMenu_2.jpg,0,0\r");                              // 2호탄 통합 점검
 				TestResultCheck(4);             // 점검 결과 체크 표시
 				PageValue.s_Fire[FIRE_TEST_TOTAL_2] = 1;
 				PageValue.s_Fire[FIRE_TEST] = 0;
@@ -1442,7 +1503,7 @@ void MenuDisplay(void)
 		else if((ButtonValue.s_BackButton == 1) && (PORTEbits.RE4 == 0))
 		{
 			// <editor-fold defaultstate="collapsed" desc="이전">
-			printf("i MENU/ModeMenu.png,0,0\r");        // 모드 선택 화면 출력
+			printf("i MENU/ModeMenu.jpg,0,0\r");        // 모드 선택 화면 출력
 			AlramPrint();
 
 			PageValue.s_Fire[FIRE_TEST] = 0;
@@ -1592,7 +1653,7 @@ void MenuDisplay(void)
 			{
 			case 1:
 
-				printf("i Result/MSLEXTPWR.png,0,0\r");
+				printf("i Result/MSLEXTPWR.jpg,0,0\r");
 				RecvDataSort(MSL,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				AlramPrint();
 				ButtonValue.s_NextButton = 0;
@@ -1600,7 +1661,7 @@ void MenuDisplay(void)
 				g_MenuPage = 0;
 				break;
 			case 2:
-				printf("i Result/TESTEXTPWR.png,0,0\r");
+				printf("i Result/TESTEXTPWR.jpg,0,0\r");
 				AlramPrint();
 				RecvDataSort(EXT,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
@@ -1609,7 +1670,7 @@ void MenuDisplay(void)
 				break;
 
 			case 3:
-				printf("i Result/EBSQB.png,0,0\r");
+				printf("i Result/EBSQB.jpg,0,0\r");
 				AlramPrint();
 				RecvDataSort(EB,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
@@ -1617,7 +1678,7 @@ void MenuDisplay(void)
 				g_MenuPage = 0;
 				break;
 			case 4:
-				printf("i Result/BATSQB.png,0,0\r");
+				printf("i Result/BATSQB.jpg,0,0\r");
 				AlramPrint();
 				RecvDataSort(BAT,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
@@ -1626,7 +1687,7 @@ void MenuDisplay(void)
 				break;
 
 			case 5:
-				printf("i Result/ABATSQB.png,0,0\r");
+				printf("i Result/ABATSQB.jpg,0,0\r");
 				AlramPrint();
 				RecvDataSort(ABAT,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
@@ -1634,7 +1695,7 @@ void MenuDisplay(void)
 				g_MenuPage = 0;
 				break;
 			case 6:
-				printf("i Result/BDUSQB.png,0,0\r");
+				printf("i Result/BDUSQB.jpg,0,0\r");
 				AlramPrint();
 				RecvDataSort(BDU,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
@@ -1643,7 +1704,7 @@ void MenuDisplay(void)
 				break;
 
 			case 7:
-				printf("i Result/ARMING.png,0,0\r");
+				printf("i Result/ARMING.jpg,0,0\r");
 				AlramPrint();
 				RecvDataSort(ARMING,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
@@ -1651,7 +1712,7 @@ void MenuDisplay(void)
 				g_MenuPage = 0;
 				break;
 			case 8:
-				printf("i Result/INTARMING.png,0,0\r");
+				printf("i Result/INTARMING.jpg,0,0\r");
 				AlramPrint();
 				RecvDataSort(INTARM,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
@@ -1660,7 +1721,7 @@ void MenuDisplay(void)
 				break;
 
 			case 9:
-				printf("i Result/INTSQB.png,0,0\r");
+				printf("i Result/INTSQB.jpg,0,0\r");
 				AlramPrint();
 				RecvDataSort(INT,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
@@ -1677,7 +1738,7 @@ void MenuDisplay(void)
 			switch(g_MenuPage)
 			{
 			case 0:
-				printf("i MENU/FireEachTestMenu_1.png,0,0\r");
+				printf("i MENU/FireEachTestMenu_1.jpg,0,0\r");
 				TestResultCheck(3);                 // 자체 점검 결과 화면 출력
 				if(PageValue.s_FireDetailResult_1[MSL_RESULT]==1) PageValue.s_FireDetailResult_1[MSL_RESULT]=0;
 				else if(PageValue.s_FireDetailResult_1[MSL_RESULT]==1) PageValue.s_FireDetailResult_1[MSL_RESULT]=0;
@@ -1695,7 +1756,7 @@ void MenuDisplay(void)
 				g_MenuPage = 1; //g_MenuPage == 0 ? 1:0;   //1
 				break;
 			case 1:
-				printf("i MENU/FireTestMenu.png,0,0\r");
+				printf("i MENU/FireTestMenu.jpg,0,0\r");
 				AlramPrint();
 				PageValue.s_Fire[FIRE_TEST] = 1;
 				PageValue.s_Fire[FIRE_TEST_EACH_1] = 0;
@@ -1813,7 +1874,7 @@ void MenuDisplay(void)
 			{
 			case 1:
 
-				printf("i Result/MSLEXTPWR.png,0,0\r");
+				printf("i Result/MSLEXTPWR.jpg,0,0\r");
 				RecvDataSort(MSL,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				AlramPrint();
 				ButtonValue.s_NextButton = 0;
@@ -1821,7 +1882,7 @@ void MenuDisplay(void)
 				g_MenuPage = 0;
 				break;
 			case 2:
-				printf("i Result/TESTEXTPWR.png,0,0\r");
+				printf("i Result/TESTEXTPWR.jpg,0,0\r");
 				AlramPrint();
 				RecvDataSort(EXT,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
@@ -1830,7 +1891,7 @@ void MenuDisplay(void)
 				break;
 
 			case 3:
-				printf("i Result/EBSQB.png,0,0\r");
+				printf("i Result/EBSQB.jpg,0,0\r");
 				AlramPrint();
 				RecvDataSort(EB,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
@@ -1838,7 +1899,7 @@ void MenuDisplay(void)
 				g_MenuPage = 0;
 				break;
 			case 4:
-				printf("i Result/BATSQB.png,0,0\r");
+				printf("i Result/BATSQB.jpg,0,0\r");
 				AlramPrint();
 				RecvDataSort(BAT,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
@@ -1847,7 +1908,7 @@ void MenuDisplay(void)
 				break;
 
 			case 5:
-				printf("i Result/ABATSQB.png,0,0\r");
+				printf("i Result/ABATSQB.jpg,0,0\r");
 				AlramPrint();
 				RecvDataSort(ABAT,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
@@ -1855,7 +1916,7 @@ void MenuDisplay(void)
 				g_MenuPage = 0;
 				break;
 			case 6:
-				printf("i Result/BDUSQB.png,0,0\r");
+				printf("i Result/BDUSQB.jpg,0,0\r");
 				AlramPrint();
 				RecvDataSort(BDU,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
@@ -1864,7 +1925,7 @@ void MenuDisplay(void)
 				break;
 
 			case 7:
-				printf("i Result/ARMING.png,0,0\r");
+				printf("i Result/ARMING.jpg,0,0\r");
 				AlramPrint();
 				RecvDataSort(ARMING,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
@@ -1872,7 +1933,7 @@ void MenuDisplay(void)
 				g_MenuPage = 0;
 				break;
 			case 8:
-				printf("i Result/INTARMING.png,0,0\r");
+				printf("i Result/INTARMING.jpg,0,0\r");
 				AlramPrint();
 				RecvDataSort(INTARM,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
@@ -1881,7 +1942,7 @@ void MenuDisplay(void)
 				break;
 
 			case 9:
-				printf("i Result/INTSQB.png,0,0\r");
+				printf("i Result/INTSQB.jpg,0,0\r");
 				AlramPrint();
 				RecvDataSort(INT,FIRST);    // 파싱된 데이터를 선택하는 세부 점검 결과별 점검 결과를 표시
 				ButtonValue.s_NextButton = 0;
@@ -1898,7 +1959,7 @@ void MenuDisplay(void)
 			switch(g_MenuPage)
 			{
 			case 0:
-				printf("i MENU/FireTotalTestMenu_1.png,0,0\r");
+				printf("i MENU/FireTotalTestMenu_1.jpg,0,0\r");
 				TestResultCheck(3);                 // 자체 점검 결과 화면 출력
 				if(PageValue.s_FireDetailResult_1[MSL_RESULT]==1) PageValue.s_FireDetailResult_1[MSL_RESULT]=0;
 				else if(PageValue.s_FireDetailResult_1[MSL_RESULT]==1) PageValue.s_FireDetailResult_1[MSL_RESULT]=0;
@@ -1916,7 +1977,7 @@ void MenuDisplay(void)
 				g_MenuPage = 1; //g_MenuPage == 0 ? 1:0;   //1
 				break;
 			case 1:
-				printf("i MENU/FireTestMenu.png,0,0\r");
+				printf("i MENU/FireTestMenu.jpg,0,0\r");
 				AlramPrint();
 				PageValue.s_Fire[FIRE_TEST] = 1;
 				PageValue.s_Fire[FIRE_TEST_EACH_1] = 0;
@@ -1946,7 +2007,7 @@ void MenuDisplay(void)
 			switch(g_MenuPage)
 			{
 			case 0:
-				printf("i MENU/FireEachTestMenu_2.png,0,0\r");
+				printf("i MENU/FireEachTestMenu_2.jpg,0,0\r");
 				TestResultCheck(4);                 // 자체 점검 결과 화면 출력
 				if(PageValue.s_FireDetailResult_2[MSL_RESULT]==1) PageValue.s_FireDetailResult_2[MSL_RESULT]=0;
 				else if(PageValue.s_FireDetailResult_2[EXT_RESULT]==1) PageValue.s_FireDetailResult_2[EXT_RESULT]=0;
@@ -1963,7 +2024,7 @@ void MenuDisplay(void)
 				g_MenuPage = 1; //g_MenuPage == 0 ? 1:0;   //1
 				break;
 			case 1:
-				printf("i MENU/FireTestMenu.png,0,0\r");
+				printf("i MENU/FireTestMenu.jpg,0,0\r");
 				AlramPrint();
 				PageValue.s_Fire[FIRE_TEST] = 1;
 				PageValue.s_Fire[FIRE_TEST_EACH_2] = 0;
@@ -1991,7 +2052,7 @@ void MenuDisplay(void)
 			switch(g_MenuPage)
 			{
 			case 0:
-				printf("i MENU/FireTotalTestMenu_2.png,0,0\r");
+				printf("i MENU/FireTotalTestMenu_2.jpg,0,0\r");
 				TestResultCheck(4);                 // 자체 점검 결과 화면 출력
 				if(PageValue.s_FireDetailResult_2[MSL_RESULT]==1) PageValue.s_FireDetailResult_2[MSL_RESULT]=0;
 				else if(PageValue.s_FireDetailResult_2[EXT_RESULT]==1) PageValue.s_FireDetailResult_2[EXT_RESULT]=0;
@@ -2008,7 +2069,7 @@ void MenuDisplay(void)
 				g_MenuPage = 1; //g_MenuPage == 0 ? 1:0;   //1
 				break;
 			case 1:
-				printf("i MENU/FireTestMenu.png,0,0\r");
+				printf("i MENU/FireTestMenu.jpg,0,0\r");
 				AlramPrint();
 				PageValue.s_Fire[FIRE_TEST] = 1;
 				PageValue.s_Fire[FIRE_TEST_TOTAL_2] = 0;
@@ -2246,19 +2307,19 @@ void RecvDataSort(unsigned int Name, unsigned int Num)
 		if(FireTestCheckResult.s_MSLPWR == 0x0001)	// 유도탄 전원 끔이면
 		{
 			FireStatus.s_MSL[Num] = OFF_1 ;
-			printf("f X,197,54\r");
+			printf("i ETC/Check_FAIL.jpg,179,70\r");
 			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[MSL_RESULT] = 1) : (PageValue.s_FireDetailResult_1[MSL_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
 		}
 		else if(FireTestCheckResult.s_MSLPWR == 0x0002)	// 유도탄 전원 켬이면
 		{
 			FireStatus.s_MSL[Num] = ON_2 ;
-			printf("f O,197,54\r");
+			printf("i ETC/Check_OK.jpg,179,70\r");
 			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[MSL_RESULT] = 1) : (PageValue.s_FireDetailResult_2[MSL_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
 		}
 		else // 유도탄 전원 해당 없으면
 		{
 			FireStatus.s_MSL[Num] = NONE_0 ;
-			printf("f   ,197,54\r");
+			//printf("f   ,197,54\r");
 			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[MSL_RESULT] = 1) : (PageValue.s_FireDetailResult_2[MSL_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
 		}
 
@@ -2268,19 +2329,19 @@ void RecvDataSort(unsigned int Name, unsigned int Num)
 		if(FireTestCheckResult.s_EXTPWR == 0x0001)	// 시험장치 전원 끔이면
 		{
 			FireStatus.s_EXT[Num] = OFF_1 ;
-			printf("f X,214,54\r");
+			printf("i ETC/Check_FAIL.jpg,179,70\r");
 			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[EXT_RESULT] = 1) : (PageValue.s_FireDetailResult_2[EXT_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
 		}
 		else if(FireTestCheckResult.s_EXTPWR == 0x0002)	// 시험장치 전원 켬이면
 		{
 			FireStatus.s_EXT[Num] = ON_2 ;
-			printf("f O,214,54\r");
+			printf("i ETC/Check_OK.jpg,179,70\r");
 			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[EXT_RESULT] = 1) : (PageValue.s_FireDetailResult_2[EXT_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
 		}
 		else // 시험장치 전원 해당 없으면
 		{
 			FireStatus.s_EXT[Num] = NONE_0 ;
-			printf("f   ,214,54\r");
+			//printf("f   ,214,54\r");
 			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[EXT_RESULT] = 1) : (PageValue.s_FireDetailResult_2[EXT_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
 		}
 
@@ -2292,20 +2353,20 @@ void RecvDataSort(unsigned int Name, unsigned int Num)
 		{ // 점검이 완료 되었을경우 정상 비정상 판단함
 			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[EB_RESULT] = 1) : (PageValue.s_FireDetailResult_2[EB_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
 			FireStatus.s_EB[Num][EB1_SQUIB1] = (FireTestCheckResult.EB.s_EB1SQUIB1 == 0x0001) ? GOOD_1 : FAIL;	// EB1 SQUIB1 이 정상이면
-			if(FireStatus.s_EB[Num][EB1_SQUIB1] == GOOD_1) printf("f O,182,54\r");
-			else printf("f X,182,54\r");
+			if(FireStatus.s_EB[Num][EB1_SQUIB1] == GOOD_1) printf("i ETC/Check_OK.jpg,179,70\r");
+			else printf("i ETC/Check_FAIL.jpg,179,70\r");
 
 			FireStatus.s_EB[Num][EB1_SQUIB2] = (FireTestCheckResult.EB.s_EB1SQUIB2 == 0x0002) ? GOOD_1 : FAIL;	// EB1 SQUIB2 이 정상이면
-			if(FireStatus.s_EB[Num][EB1_SQUIB2] == GOOD_1) printf("f O,182,80\r");
-			else printf("f X,182,80\r");
+			if(FireStatus.s_EB[Num][EB1_SQUIB2] == GOOD_1) printf("i ETC/Check_OK.jpg,179,94\r");
+			else printf("i ETC/Check_FAIL.jpg,179,94\r");
 
 			FireStatus.s_EB[Num][EB2_SQUIB1] = (FireTestCheckResult.EB.s_EB2SQUIB1 == 0x0004) ? GOOD_1 : FAIL;	// EB2 SQUIB1 이 정상이면
-			if(FireStatus.s_EB[Num][EB2_SQUIB1] == GOOD_1) printf("f O,182,106\r");
-			else printf("f X,182,106\r");
+			if(FireStatus.s_EB[Num][EB2_SQUIB1] == GOOD_1) printf("i ETC/Check_OK.jpg,179,118\r");
+			else printf("i ETC/Check_FAIL.jpg,179,118\r");
 
 			FireStatus.s_EB[Num][EB2_SQUIB2] = (FireTestCheckResult.EB.s_EB2SQUIB2 == 0x0008) ? GOOD_1 : FAIL;	// EB2 SQUIB2 이 정상이면
-			if(FireStatus.s_EB[Num][EB2_SQUIB2] == GOOD_1) printf("f O,182,132\r");
-			else printf("f X,182,132\r");
+			if(FireStatus.s_EB[Num][EB2_SQUIB2] == GOOD_1) printf("i ETC/Check_OK.jpg,179,142\r");
+			else printf("i ETC/Check_FAIL.jpg,179,142\r");
 
 		}
 		else	// 미점검 일경우
@@ -2324,20 +2385,20 @@ void RecvDataSort(unsigned int Name, unsigned int Num)
 		{ // 점검이 완료 되었을경우 정상 비정상 판단함
 			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[BAT_RESULT] = 1) : (PageValue.s_FireDetailResult_2[BAT_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
 			FireStatus.s_BAT[Num][BAT1_SQUIB1] = (FireTestCheckResult.BAT.s_BAT1SQUIB1 == 0x0001) ? GOOD_1 : FAIL;	// BAT1_SQUIB1 이 정상이면
-			if(FireStatus.s_BAT[Num][BAT1_SQUIB1] == GOOD_1) printf("f O,198,54\r");
-			else printf("f X,198,54\r");
+			if(FireStatus.s_BAT[Num][BAT1_SQUIB1] == GOOD_1) printf("i ETC/Check_OK.jpg,179,70\r");
+			else printf("i ETC/Check_FAIL.jpg,179,70\r");
 
 			FireStatus.s_BAT[Num][BAT1_SQUIB2] = (FireTestCheckResult.BAT.s_BAT1SQUIB2 == 0x0002) ? GOOD_1 : FAIL;	// BAT1_SQUIB2 이 정상이면
-			if(FireStatus.s_BAT[Num][BAT1_SQUIB2] == GOOD_1) printf("f O,198,80\r");
-			else printf("f X,198,80\r");
+			if(FireStatus.s_BAT[Num][BAT1_SQUIB2] == GOOD_1) printf("i ETC/Check_OK.jpg,179,94\r");
+			else printf("i ETC/Check_FAIL.jpg,179,94\r");
 
 			FireStatus.s_BAT[Num][BAT2_SQUIB1] = (FireTestCheckResult.BAT.s_BAT2SQUIB1 == 0x0004) ? GOOD_1 : FAIL;	// BAT2_SQUIB1 이 정상이면
-			if(FireStatus.s_BAT[Num][BAT2_SQUIB1] == GOOD_1) printf("f O,198,106\r");
-			else printf("f X,198,106\r");
+			if(FireStatus.s_BAT[Num][BAT2_SQUIB1] == GOOD_1) printf("i ETC/Check_OK.jpg,179,118\r");
+			else printf("i ETC/Check_FAIL.jpg,179,118\r");
 
 			FireStatus.s_BAT[Num][BAT2_SQUIB2] = (FireTestCheckResult.BAT.s_BAT2SQUIB2 == 0x0008) ? GOOD_1 : FAIL;	// BAT2_SQUIB2 이 정상이면
-			if(FireStatus.s_BAT[Num][BAT2_SQUIB2] == GOOD_1) printf("f O,198,132\r");
-			else printf("f X,198,132\r");
+			if(FireStatus.s_BAT[Num][BAT2_SQUIB2] == GOOD_1) printf("i ETC/Check_OK.jpg,179,142\r");
+			else printf("i ETC/Check_FAIL.jpg,179,142\r");
 
 		}
 		else	// 미점검 일경우
@@ -2355,20 +2416,20 @@ void RecvDataSort(unsigned int Name, unsigned int Num)
 		if(FireStatus.s_ABAT[Num][ABAT_STATUS] == GOOD_1){ // 점검이 완료 되었을경우 정상 비정상 판단함
 			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[ABAT_RESULT] = 1) : (PageValue.s_FireDetailResult_2[ABAT_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
 			FireStatus.s_ABAT[Num][ABAT1_SQUIB1] = (FireTestCheckResult.ABAT.s_ABAT1SQUIB1 == 0x0001) ? GOOD_1 : FAIL;	// ABAT1_SQUIB1 이 정상이면
-			if(FireStatus.s_ABAT[Num][ABAT1_SQUIB1] == GOOD_1) printf("f O,215,54\r");
-			else printf("f X,215,54\r");
+			if(FireStatus.s_ABAT[Num][ABAT1_SQUIB1] == GOOD_1) printf("i ETC/Check_OK.jpg,179,70\r");
+			else printf("i ETC/Check_FAIL.jpg,179,70\r");
 
 			FireStatus.s_ABAT[Num][ABAT1_SQUIB2] = (FireTestCheckResult.ABAT.s_ABAT1SQUIB2 == 0x0002) ? GOOD_1 : FAIL;	// ABAT1_SQUIB2 이 정상이면
-			if(FireStatus.s_ABAT[Num][ABAT1_SQUIB2] == GOOD_1) printf("f O,215,80\r");
-			else printf("f X,215,80\r");
+			if(FireStatus.s_ABAT[Num][ABAT1_SQUIB2] == GOOD_1) printf("i ETC/Check_OK.jpg,179,94\r");
+			else printf("i ETC/Check_FAIL.jpg,179,94\r");
 
 			FireStatus.s_ABAT[Num][ABAT2_SQUIB1] = (FireTestCheckResult.ABAT.s_ABAT2SQUIB1 == 0x0004) ? GOOD_1 : FAIL;	// ABAT2_SQUIB1 이 정상이면
-			if(FireStatus.s_ABAT[Num][ABAT2_SQUIB1] == GOOD_1) printf("f O,215,106\r");
-			else printf("f X,215,106\r");
+			if(FireStatus.s_ABAT[Num][ABAT2_SQUIB1] == GOOD_1) printf("i ETC/Check_OK.jpg,179,118\r");
+			else printf("i ETC/Check_FAIL.jpg,179,118\r");
 
 			FireStatus.s_ABAT[Num][ABAT2_SQUIB2] = (FireTestCheckResult.ABAT.s_ABAT2SQUIB2 == 0x0008) ? GOOD_1 : FAIL;	// ABAT2_SQUIB2 이 정상이면
-			if(FireStatus.s_ABAT[Num][ABAT2_SQUIB2] == GOOD_1) printf("f O,215,132\r");
-			else printf("f X,215,132\r");
+			if(FireStatus.s_ABAT[Num][ABAT2_SQUIB2] == GOOD_1) printf("i ETC/Check_OK.jpg,179,142\r");
+			else printf("i ETC/Check_FAIL.jpg,179,142\r");
 
 		}
 		else	// 미점검 일경우
@@ -2387,12 +2448,12 @@ void RecvDataSort(unsigned int Name, unsigned int Num)
 		{ // 점검이 완료 되었을경우 정상 비정상 판단함
 			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[BDU_RESULT] = 1) : (PageValue.s_FireDetailResult_2[BDU_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
 			FireStatus.s_BDU[Num][BDU_SQUIB1] = (FireTestCheckResult.BDU.s_BDUSQUIB1 == 0x0001) ? GOOD_1 : FAIL;	// BDU1_SQUIB1 이 정상이면
-			if(FireStatus.s_BDU[Num][BDU_SQUIB1] == GOOD_1) printf("f O,184,54\r");
-			else printf("f X,184,54\r");
+			if(FireStatus.s_BDU[Num][BDU_SQUIB1] == GOOD_1) printf("i ETC/Check_OK.jpg,179,70\r");
+			else printf("i ETC/Check_FAIL.jpg,179,70\r");
 
 			FireStatus.s_BDU[Num][BDU_SQUIB2] = (FireTestCheckResult.BDU.s_BDUSQUIB2 == 0x0002) ? GOOD_1 : FAIL;	// BDU1_SQUIB2 이 정상이면
-			if(FireStatus.s_BDU[Num][BDU_SQUIB2] == GOOD_1) printf("f O,184,80\r");
-			else printf("f X,184,80\r");
+			if(FireStatus.s_BDU[Num][BDU_SQUIB2] == GOOD_1) printf("i ETC/Check_OK.jpg,179,94\r");
+			else printf("i ETC/Check_FAIL.jpg,179,94\r");
 
 
 		}
@@ -2409,13 +2470,13 @@ void RecvDataSort(unsigned int Name, unsigned int Num)
 		if(FireTestCheckResult.s_ARMING == 0x0001)	// 신관장전 비정상이면
 		{
 			FireStatus.s_ARMING[Num] = FAIL ;
-			printf("f X,117,54\r");
+			printf("i ETC/Check_FAIL.jpg,179,70\r");
 			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[ARMING_RESULT] = 1) : (PageValue.s_FireDetailResult_2[ARMING_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
 		}
 		else if(FireTestCheckResult.s_ARMING == 0x0002)	// 신관장전 정상이면
 		{
 			FireStatus.s_ARMING[Num] = GOOD_1 ;
-			printf("f O,117,54\r");
+			printf("i ETC/Check_OK.jpg,179,70\r");
 			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[ARMING_RESULT] = 1) : (PageValue.s_FireDetailResult_2[ARMING_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
 		}
 		else // 신관장전 해당 없으면
@@ -2431,13 +2492,13 @@ void RecvDataSort(unsigned int Name, unsigned int Num)
 		if(FireTestCheckResult.s_INTARM == 0x0001)	// 점화장전 비정상이면
 		{
 			FireStatus.s_INTARM[Num] = FAIL ;
-			printf("f X,182,54\r");
+			printf("i ETC/Check_FAIL.jpg,177,73\r");
 			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[INTARM_RESULT] = 1) : (PageValue.s_FireDetailResult_2[INTARM_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
 		}
 		else if(FireTestCheckResult.s_INTARM == 0x0002)	// 점화장전 정상이면
 		{
 			FireStatus.s_INTARM[Num] = GOOD_1 ;
-			printf("f O,182,54\r");
+			printf("i ETC/Check_OK.jpg,177,73\r");
 			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[INTARM_RESULT] = 1) : (PageValue.s_FireDetailResult_2[INTARM_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
 		}
 		else // 점화장전 해당 없으면
@@ -2454,12 +2515,12 @@ void RecvDataSort(unsigned int Name, unsigned int Num)
 		{ // 점검이 완료 되었을경우 정상 비정상 판단함
 			(Num == FIRST) ? (PageValue.s_FireDetailResult_1[INT_RESULT] = 1) : (PageValue.s_FireDetailResult_2[INT_RESULT] = 1);	// 유도탄 번호가 1,2이면 수신 확인 값 변경
 			FireStatus.s_INT[Num][INT_SQUIB1] = (FireTestCheckResult.INT.s_INTSQUIB1 == 0x0001) ? GOOD_1 : FAIL;	// INT1_SQUIB1 이 정상이면
-			if(FireStatus.s_INT[Num][INT_SQUIB1] == GOOD_1) printf("f O,182,54\r");
-			else printf("f X,182,54\r");
+			if(FireStatus.s_INT[Num][INT_SQUIB1] == GOOD_1) printf("i ETC/Check_OK.jpg,179,70\r");
+			else printf("i ETC/Check_FAIL.jpg,179,70\r");
 
 			FireStatus.s_INT[Num][INT_SQUIB2] = (FireTestCheckResult.INT.s_INTSQUIB2 == 0x0002) ? GOOD_1 : FAIL;	// INT1_SQUIB2 이 정상이면
-			if(FireStatus.s_INT[Num][INT_SQUIB2] == GOOD_1) printf("f O,182,80\r");
-			else printf("f X,182,80\r");
+			if(FireStatus.s_INT[Num][INT_SQUIB2] == GOOD_1) printf("i ETC/Check_OK.jpg,179,94\r");
+			else printf("i ETC/Check_FAIL.jpg,179,94\r");
 		}
 		else	// 미점검 일경우
 		{
