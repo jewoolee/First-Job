@@ -21,7 +21,7 @@
 //_FOSC(ECIO_PLL4);//_FOSC(ECIO_PLL8);
 //_FWDT(WDT_OFF);
 //_FBORPOR(MCLR_EN && PWRT_OFF);
-void OperationSwitch();
+
 void ButtonPrintValue(void);
 void InitValue(void);
 void MenuDisplay(void);
@@ -39,7 +39,6 @@ void InsulationTest(void);
 void InsulationTestResult(void);
 void InsulationTestResultDebug(void);
 unsigned int ReadADC7980(void);
-void ADCValueCheck(int ChannelCount);
 void ReadADCValue(unsigned int AverageCount);
 void AlramPrint();
 void UdpSetting();
@@ -64,8 +63,8 @@ enum { MODE_SEL, VOLT_ERR}; // 2 ¸ðµå È­¸é, ¿¡·¯ È­¸é
 enum { CHK_OK, CHK_NO, CHK_RESULT, CHK_HINT, CHK_HINT_1, CHK_LAN, CHK_VOLT, CHK_BIT}; // 7
 enum { NONE, SELF, LINE, FIRE1, FIRE2 };
 enum { SELF_TEST, SELF_RES_TEST, SELF_SHO_TEST, SELF_INS_TEST}; // 5
-enum { SELF_RES_ING, SELF_SHO_ING, SELF_INS_ING, SELF_RES_RESULT, SELF_SHO_RESULT, SELF_INS_RESULT}; // 6
-enum { LINE_RES_ING, LINE_SHO_ING, LINE_INS_ING, LINE_RES_RESULT, LINE_SHO_RESULT, LINE_INS_RESULT}; // 6
+enum { SELF_RES_RESULT, SELF_SHO_RESULT, SELF_INS_RESULT}; // 3
+enum { LINE_RES_RESULT, LINE_SHO_RESULT, LINE_INS_RESULT}; // 3
 enum { LINE_TEST, LINE_RES_TEST, LINE_SHO_TEST, LINE_INS_TEST}; // 5
 enum { FIRE_TEST, FIRE_TEST_EACH_1, FIRE_TEST_TOTAL_1, FIRE_TEST_EACH_2, FIRE_TEST_TOTAL_2 }; // 6
 enum { MSL_RESULT, EXT_RESULT, EB_RESULT, BAT_RESULT, ABAT_RESULT, BDU_RESULT, ARMING_RESULT, INTARM_RESULT, INT_RESULT}; //9
@@ -89,26 +88,23 @@ enum { CON_ACK, FIRE_ACK };
 unsigned char g_RxBuffer[100];
 unsigned char g_RxData;
 unsigned char g_Buffer;
-unsigned char g_UartFunCtionButton;
-unsigned int g_AdcBuffer[5];
-unsigned int g_AdcCount=0;
-unsigned int g_RelayLedStatus=0;
-unsigned long int g_AdcSample[5];
-unsigned int g_RelayChannel = 0;
-unsigned int g_InputValue=0 ; // ÀÔ·Â°ª ÀúÀå º¯¼ö
-unsigned int g_TimerCount=0;
-unsigned int g_OkButtonTimerCount =0;
-unsigned int g_OkButtonTimerCountPre =0;
-unsigned int g_TimerCounter =0;
-unsigned short g_DataBuffer[7]={0,};  // 16ºñÆ®¸¸ ÀúÀå
-unsigned short g_TempBuffer[7]={0,};    // 16ºñÆ®¸¸ ÀúÀå
-unsigned int g_TotalSel = 0 ; // ÅëÇÕÁ¡°Ë ¼ø¼­
-int g_Sw[7]={0};
 
-int g_SwSum =0;
-int g_MenuPage;
+unsigned int g_AdcBuffer[5];            // ADC ÃøÁ¤°ª
+unsigned int g_AdcCount=0;              // ADC Ä«¿îÅÍ°ª
+unsigned long int g_AdcSample[5];       // ADC ÃøÁ¤ »ùÇÃ°ª
 
-unsigned short   iinchip_source_port;
+unsigned int g_RelayChannel = 0;        // ¸±·¹ÀÌ Ã¤³Î°ª
+unsigned int g_InputValue=0 ;           // ¼ýÀÚ Å°ÆÐµå°ª
+unsigned int g_TimerCount=0;            // Å¸ÀÌ¸Ó1 Ä«¿îÅÍ°ª
+unsigned int g_OkButtonTimerCount =0;   // "È®ÀÎ"¹öÆ° ´­·¶À»¶§ ÃøÁ¤µÇ´Â °ª 
+unsigned int g_TimerCounter =0;         // Å¸ÀÌ¸Ó2 Ä«¿îÅÍ°ª
+unsigned short g_DataBuffer[7]={0,};    // 16ºñÆ® Àü¼Û µ¥ÀÌÅÍ ÀúÀå ¹è¿­
+unsigned short g_TempBuffer[7]={0,};    // 16ºñÆ® ¼ö½Å µ¥ÀÌÅÍ ÀÓ½Ã ¹è¿­ ¹öÆÛ
+unsigned int g_TotalSel = 0 ;           // ¹ß»ç °èÅëÁ¡°Ë-ÅëÇÕÁ¡°Ë¿¡ ´ëÇÑ ¼ø¼­°ª
+//int g_SwSum =0;
+unsigned int g_MenuPage;                // ¸Þ´º È­¸é ÆäÀÌÁö °ª
+
+unsigned short   iinchip_source_port;   // 
 unsigned char     check_sendok_flag[8];
 const float g_Error[3] = { 0.05f,  0.4f, 1.5f};//const float g_Error[4] = { 0.05f, 0.2f, 0.4f, 1.5f};
 // <editor-fold defaultstate="collapsed" desc="±¸Á¶Ã¼ ¸ðÀ½">
@@ -130,10 +126,10 @@ struct PAGEVALUE{
 	unsigned char s_First[2];
 	unsigned char s_Check[8];
 	unsigned char s_Self[5];
-	unsigned char s_SelfResult[6];
+	unsigned char s_SelfResult[3];
 	unsigned char s_Etc[6];
 	unsigned char s_Line[5];
-	unsigned char s_LineResult[6];
+	unsigned char s_LineResult[3];
 	unsigned char s_Fire[5];
 	unsigned char s_FireRecvResult_1[9];
 	unsigned char s_FireDetailResult_1[9];
@@ -171,7 +167,7 @@ struct FIRETESTCHECK{
 	unsigned int s_EXTPWR;
 	unsigned int s_EBSQUIB;
 	unsigned int s_BATSQUIB;
-	unsigned int s_ABARSQUIB;
+	unsigned int s_ABATSQUIB;
 	unsigned int s_BDUSQUIB;
 	unsigned int s_ARMING;
 	unsigned int s_INTARM;
@@ -334,7 +330,7 @@ void __attribute__ ((interrupt, no_auto_psv)) _INT1Interrupt(void)
 	if((PORTEbits.RE3 == 0) && (g_InputValue >0))
 	{
 		ButtonValue.s_OkButton = 1;
-		g_SwSum = g_InputValue;
+		//g_SwSum = g_InputValue;
 	}
 	ButtonValue.s_NextButton == 0 ? printf("R 80,240,104,264,255,255,255,1\r"):NULL;    // ¼¼ºÎ Á¡°Ë °á°ú È­¸é¿¡¼­ ¼ýÀÚ ¹öÆ° ¸ø¾²µµ·Ï
 	if((g_InputValue != 0) && (ButtonValue.s_NextButton == 0))
@@ -359,21 +355,13 @@ void __attribute__ ((interrupt, no_auto_psv)) _INT2Interrupt(void)
 	if((PORTEbits.RE5 == 0) && (g_InputValue >0))
 	{
 		ButtonValue.s_NextButton = 1;
-		g_SwSum = g_InputValue;
+		//g_SwSum = g_InputValue;
 	}
 	IFS1bits.INT1IF = 0;		// INT1 Interrupt Flag Clear;
 	IFS1bits.INT2IF = 0;		// INT2 Interrupt Flag Clear
 }
-void OperationSwitch()
-{
-	g_Sw[0] =  PORTEbits.RE0;    // 1(È®ÀÎ)
-	g_Sw[1] =  PORTEbits.RE1;    // 2(µµÅë)
-	g_Sw[2] =  PORTEbits.RE2;    // 3(ÅëÇÕ)
-	g_Sw[3] =  PORTEbits.RE3;    // ok(ºóÄ­)
-	g_Sw[4] =  PORTEbits.RE4;    // ÀÌÀü(Àý¿¬)
-	g_Sw[5] =  PORTEbits.RE5;    // >(ÀÜ·ù)
-}
-void ButtonPrintValue(void) // ¹öÆ°ÀÔ·Â°ª È­¸é Ãâ·Â SCI ¿¬µ¿
+
+void ButtonPrintValue(void)      // ¹öÆ°ÀÔ·Â°ª È­¸é Ãâ·Â SCI ¿¬µ¿
 {
 	switch(g_RxData)
 	{
@@ -525,7 +513,7 @@ void ButtonPrintValue(void) // ¹öÆ°ÀÔ·Â°ª È­¸é Ãâ·Â SCI ¿¬µ¿
 
 	}*/// ±âÁ¸ ¼Ò½º
 }
-void InnerVoltTest(void)      // ³»ºÎ Àü¿ø Á¡°Ë (¿Ï·á vref. 5v, +15v, -15v Á¤»ó°ª È®ÀÎ ¿Ï·á)
+void InnerVoltTest(void)         // ³»ºÎ Àü¿ø Á¡°Ë (¿Ï·á vref. 5v, +15v, -15v Á¤»ó°ª È®ÀÎ ¿Ï·á)
 {
 	unsigned char n;
 	unsigned int *pADC_buf16;
@@ -644,7 +632,7 @@ void InnerVoltTest(void)      // ³»ºÎ Àü¿ø Á¡°Ë (¿Ï·á vref. 5v, +15v, -15v Á¤»ó°
 	}
 
 }
-void InitValue(void)
+void InitValue(void)             // º¯¼ö ÃÊ±âÈ­
 {
 	unsigned char n;
 
@@ -661,7 +649,7 @@ void InitValue(void)
 	memset(&SelfTest, 0, sizeof(struct SELFTESTTYPE));    // ³»ºÎ Àü¿øÁ¡°Ë º¯¼ö ÃÊ±âÈ­
 
 }
-void TestResultCheck(unsigned int Label)
+void TestResultCheck(unsigned int Label)    // ÀÚÃ¼, Á¡È­, µµÅë Á¡°Ë ¡Ü, ¢¹ Ã¼Å© Ç¥½Ã
 {
 	unsigned char n=0;        // ÈùÆ® Ãâ·Â ºñ±³
 	switch(Label)
@@ -683,7 +671,7 @@ void TestResultCheck(unsigned int Label)
 		if(PageValue.s_Line[LINE_INS_TEST]==1){ printf("i ETC/Check.jpg,196,117\r"); printf("i ETC/Check_.jpg,222,117\r"); n++;}
 		if(n>0) printf("i ETC/Hint.png,0,205\r");     // ÈùÆ® Ãâ·Â
 		break;
-	case 3:
+	case 3: // 1È£Åº Á¡°Ë Ã¼Å©
 
 		AlramPrint();
 		if(PageValue.s_FireRecvResult_1[MSL_RESULT]==1)   { printf("i ETC/Check.jpg,176,70\r"); printf("i ETC/Check_.jpg,205,70\r"); n++;}
@@ -697,10 +685,9 @@ void TestResultCheck(unsigned int Label)
 		if(PageValue.s_FireRecvResult_1[INT_RESULT]==1)   { printf("i ETC/Check.jpg,411,93\r"); printf("i ETC/Check_.jpg,440,93\r");n++;}
 		if(n>0) printf("i ETC/Hint_1.png,242,175\r");     // ÈùÆ® Ãâ·Â
 		printf("R 80,240,104,264,255,255,255,1\r");
-
 		break;
-	case 4:
-
+	
+        case 4: // 2È£Åº Á¡°Ë Ã¼Å©
 		AlramPrint();
 		if(PageValue.s_FireRecvResult_2[MSL_RESULT]==1)   { printf("i ETC/Check.jpg,176,70\r"); printf("i ETC/Check_.jpg,205,70\r"); n++;}
 		if(PageValue.s_FireRecvResult_2[EXT_RESULT]==1)   { printf("i ETC/Check.jpg,176,94\r"); printf("i ETC/Check_.jpg,205,94\r"); n++;}
@@ -713,11 +700,9 @@ void TestResultCheck(unsigned int Label)
 		if(PageValue.s_FireRecvResult_2[INT_RESULT]==1)    { printf("i ETC/Check.jpg,411,93\r"); printf("i ETC/Check_.jpg,440,93\r");n++;}
 		if(n>0) printf("i ETC/Hint_1.png,242,175\r");       // ÈùÆ® Ãâ·Â
 		printf("R 80,240,104,264,255,255,255,1\r");
-
 		break;
 	}
 }
-
 void RelayControl() // Å¸ÀÌ¸Ó Ä«¿îÅÍ·Î ÀÎÇØ 600ms ¸¶´Ù ¹Ýº¹µ¿ÀÛÇÔ.
 {
 	unsigned int Count = 0;
@@ -740,25 +725,26 @@ void RelayControl() // Å¸ÀÌ¸Ó Ä«¿îÅÍ·Î ÀÎÇØ 600ms ¸¶´Ù ¹Ýº¹µ¿ÀÛÇÔ.
 	ReadADCValue(50);
 	g_RelayChannel++;
 }
-void InitRelay(void)
+void InitRelay(void)    // ¸±·¹ÀÌ ·¹Áö½ºÅÍ ÃÊ±âÈ­
 {
 	PORTD = 0x0000;                 // DO 0~7¹ø »ç¿ë ¾ÈÇÒ°æ¿ì 0À¸·Î ÃÊ±âÈ­
 	PORTG = ChipSelectParam[SEL_ADC];
 }
-void AlramPrint()
+void AlramPrint()       // ÀÚÃ¼Á¡°Ë°¡´É, Àü¿øÁ¤»ó, LAN¿¬°á »óÅÂ¾Ë¶÷¸Þ½ÃÁö Ãâ·Â
 {
 	if(PageValue.s_Check[CHK_VOLT] == 1) printf("i ETC/VoltGood.jpg,0,2\r");        // ³»ºÎ Àü¿ø Á¤»ó½Ã ¾Ë¶÷ Ãâ·Â
 	if(PageValue.s_Check[CHK_BIT] == 1) printf("i ETC/BitCheck.jpg,325,2\r");        // ÀÚÃ¼ Á¡°Ë °¡´É ¾Ë¶÷ Ãâ·Â
 	if(PageValue.s_Check[CHK_LAN] == 1) printf("i ETC/LanConnect.jpg,165,2\r");        // LAN ¿¬°á»óÅÂ È®ÀÎ ¾Ë¶÷
 }
-void RelayLedControl(unsigned char Ch, unsigned char On_Off)
+void RelayLedControl(unsigned char Ch, unsigned char On_Off)    // ÀÜ·ùÀü¾Ð ¸±·¹ÀÌ, Àý¿¬Á¡¾Ð ¸±·¹ÀÌ Á¦¾î
 {
+    unsigned int RelayLedStatus=0;    // ADC Ã÷
 	// RESIDUAL_RELAY - ¸±·¹ÀÌ 0¹ø »ç¿ë , INSUL_RELAY - ¸±·¹ÀÌ 1¹ø »ç¿ë
 	if(On_Off == ON)
-		SET_BIT(g_RelayLedStatus, Ch);
+		SET_BIT(RelayLedStatus, Ch);    // ON ÀÌ¸é CH¹øÂ° 1·Î º¯°æ
 	else
-		CLEAR_BIT(g_RelayLedStatus, Ch);
-	PORTD = g_RelayLedStatus;
+		CLEAR_BIT(RelayLedStatus, Ch);  // OFF¸é CH¹øÂ° 0À¸·Î º¯°æ
+	PORTD = RelayLedStatus;             // 0001 OR 0002
 	PORTG = ChipSelectParam[SEL_LEDADC];   //  ADC(CS2) + LED(CS0)
 	PORTG = ChipSelectParam[SEL_ADC];   // ADC(CS2)
 }
@@ -839,7 +825,6 @@ void ResidualVoltTestResult(void)
 	}
 
 }
-
 void ResidualVoltTestResultDebug(void)
 {
 	printf("i Result_D/ResidualVoltResult_D.jpg,0,0\r");
@@ -1107,7 +1092,7 @@ void ShortTestResultDebug(void)
 }
 // </editor-fold>
 
-unsigned int ReadADC7980(void)
+unsigned int ReadADC7980(void)      // ADC7980 SPIÅë½ÅÀÌ¿ë ÃøÁ¤°ª ¹ÝÈ¯
 {
 	unsigned int data;
 	data = 0;
@@ -1121,7 +1106,7 @@ unsigned int ReadADC7980(void)
 
 	return data;
 }
-void ReadADCValue(unsigned int AverageCount)
+void ReadADCValue(unsigned int AverageCount)    // ADC ÃøÁ¤°ª ±¸ÇÏ±â
 {
 	unsigned char n;
 	Adc7980Value.s_Sum[g_RelayChannel] = 0;
@@ -1750,7 +1735,7 @@ void MenuDisplay(void)
 				else if(PageValue.s_FireDetailResult_1[ARMING_RESULT]==1) PageValue.s_FireDetailResult_1[ARMING_RESULT]=0;
 				else if(PageValue.s_FireDetailResult_1[INTARM_RESULT]==1) PageValue.s_FireDetailResult_1[INTARM_RESULT]=0;
 				else if(PageValue.s_FireDetailResult_1[INT_RESULT]==1) PageValue.s_FireDetailResult_1[INT_RESULT]=0;
-				IEC1bits.INT1IE = 1;	// ÀÎÅÍ·´Æ® 1ÁßÁö
+				IEC1bits.INT1IE = 1;	// ÀÎÅÍ·´Æ® 1µ¿ÀÛ
 				// ÀÚÃ¼ Á¡°Ë °á°ú È­¸é Ãâ·Â½Ã ¹öÆ° ÇÃ·¡±× ÃÊ±âÈ­
 				ButtonValue.s_BackButton = 0;
 				g_MenuPage = 1; //g_MenuPage == 0 ? 1:0;   //1
@@ -2018,7 +2003,7 @@ void MenuDisplay(void)
 				else if(PageValue.s_FireDetailResult_2[ARMING_RESULT]==1) PageValue.s_FireDetailResult_2[ARMING_RESULT]=0;
 				else if(PageValue.s_FireDetailResult_2[INTARM_RESULT]==1) PageValue.s_FireDetailResult_2[INTARM_RESULT]=0;
 				else if(PageValue.s_FireDetailResult_2[INT_RESULT]==1) PageValue.s_FireDetailResult_2[INT_RESULT]=0;
-				IEC1bits.INT1IE = 1;	// ÀÎÅÍ·´Æ® 1ÁßÁö
+				//IEC1bits.INT1IE = 1;	// ÀÎÅÍ·´Æ® 1ÁßÁö
 				// ÀÚÃ¼ Á¡°Ë °á°ú È­¸é Ãâ·Â½Ã ¹öÆ° ÇÃ·¡±× ÃÊ±âÈ­
 				ButtonValue.s_BackButton = 0;
 				g_MenuPage = 1; //g_MenuPage == 0 ? 1:0;   //1
@@ -2122,7 +2107,7 @@ void SendData(unsigned int Name)    // 16ºñÆ® ¹è¿­·Î Àü¼ÛµÊ name º° ¸Þ½ÃÁö Àü¼ÛÀ
 		FireTestCheck.s_EXTPWR = 0;
 		FireTestCheck.s_EBSQUIB = 0;
 		FireTestCheck.s_BATSQUIB = 0;
-		FireTestCheck.s_ABARSQUIB = 0;
+		FireTestCheck.s_ABATSQUIB = 0;
 		FireTestCheck.s_BDUSQUIB = 0;
 		FireTestCheck.s_ARMING = 0;
 		FireTestCheck.s_INTARM = 0;
@@ -2135,7 +2120,7 @@ void SendData(unsigned int Name)    // 16ºñÆ® ¹è¿­·Î Àü¼ÛµÊ name º° ¸Þ½ÃÁö Àü¼ÛÀ
 		FireTestCheck.s_EXTPWR = 0x01;
 		FireTestCheck.s_EBSQUIB = 0;
 		FireTestCheck.s_BATSQUIB = 0;
-		FireTestCheck.s_ABARSQUIB = 0;
+		FireTestCheck.s_ABATSQUIB = 0;
 		FireTestCheck.s_BDUSQUIB = 0;
 		FireTestCheck.s_ARMING = 0;
 		FireTestCheck.s_INTARM = 0;
@@ -2148,7 +2133,7 @@ void SendData(unsigned int Name)    // 16ºñÆ® ¹è¿­·Î Àü¼ÛµÊ name º° ¸Þ½ÃÁö Àü¼ÛÀ
 		FireTestCheck.s_EXTPWR = 0;
 		FireTestCheck.s_EBSQUIB = 0x01;
 		FireTestCheck.s_BATSQUIB = 0;
-		FireTestCheck.s_ABARSQUIB = 0;
+		FireTestCheck.s_ABATSQUIB = 0;
 		FireTestCheck.s_BDUSQUIB = 0;
 		FireTestCheck.s_ARMING = 0;
 		FireTestCheck.s_INTARM = 0;
@@ -2162,7 +2147,7 @@ void SendData(unsigned int Name)    // 16ºñÆ® ¹è¿­·Î Àü¼ÛµÊ name º° ¸Þ½ÃÁö Àü¼ÛÀ
 		FireTestCheck.s_EXTPWR = 0;
 		FireTestCheck.s_EBSQUIB = 0;
 		FireTestCheck.s_BATSQUIB = 0x01;
-		FireTestCheck.s_ABARSQUIB = 0;
+		FireTestCheck.s_ABATSQUIB = 0;
 		FireTestCheck.s_BDUSQUIB = 0;
 		FireTestCheck.s_ARMING = 0;
 		FireTestCheck.s_INTARM = 0;
@@ -2175,12 +2160,12 @@ void SendData(unsigned int Name)    // 16ºñÆ® ¹è¿­·Î Àü¼ÛµÊ name º° ¸Þ½ÃÁö Àü¼ÛÀ
 		FireTestCheck.s_EXTPWR = 0;
 		FireTestCheck.s_EBSQUIB = 0;
 		FireTestCheck.s_BATSQUIB = 0;
-		FireTestCheck.s_ABARSQUIB = 0x01;
+		FireTestCheck.s_ABATSQUIB = 0x01;
 		FireTestCheck.s_BDUSQUIB = 0;
 		FireTestCheck.s_ARMING = 0;
 		FireTestCheck.s_INTARM = 0;
 		FireTestCheck.s_INTSQUIB = 0;
-		g_DataBuffer[6] =  (FireTestCheck.s_ABARSQUIB << 5);
+		g_DataBuffer[6] =  (FireTestCheck.s_ABATSQUIB << 5);
 		g_DataBuffer[7] = 0;
 		break;
 	case BDU:
@@ -2188,7 +2173,7 @@ void SendData(unsigned int Name)    // 16ºñÆ® ¹è¿­·Î Àü¼ÛµÊ name º° ¸Þ½ÃÁö Àü¼ÛÀ
 		FireTestCheck.s_EXTPWR = 0;
 		FireTestCheck.s_EBSQUIB = 0;
 		FireTestCheck.s_BATSQUIB = 0;
-		FireTestCheck.s_ABARSQUIB = 0;
+		FireTestCheck.s_ABATSQUIB = 0;
 		FireTestCheck.s_BDUSQUIB = 0x01;
 		FireTestCheck.s_ARMING = 0;
 		FireTestCheck.s_INTARM = 0;
@@ -2201,7 +2186,7 @@ void SendData(unsigned int Name)    // 16ºñÆ® ¹è¿­·Î Àü¼ÛµÊ name º° ¸Þ½ÃÁö Àü¼ÛÀ
 		FireTestCheck.s_EXTPWR = 0;
 		FireTestCheck.s_EBSQUIB = 0;
 		FireTestCheck.s_BATSQUIB = 0;
-		FireTestCheck.s_ABARSQUIB = 0;
+		FireTestCheck.s_ABATSQUIB = 0;
 		FireTestCheck.s_BDUSQUIB = 0;
 		FireTestCheck.s_ARMING = 0x01;
 		FireTestCheck.s_INTARM = 0;
@@ -2214,7 +2199,7 @@ void SendData(unsigned int Name)    // 16ºñÆ® ¹è¿­·Î Àü¼ÛµÊ name º° ¸Þ½ÃÁö Àü¼ÛÀ
 		FireTestCheck.s_EXTPWR = 0;
 		FireTestCheck.s_EBSQUIB = 0;
 		FireTestCheck.s_BATSQUIB = 0;
-		FireTestCheck.s_ABARSQUIB = 0;
+		FireTestCheck.s_ABATSQUIB = 0;
 		FireTestCheck.s_BDUSQUIB = 0;
 		FireTestCheck.s_ARMING = 0;
 		FireTestCheck.s_INTARM = 0x01;
@@ -2227,7 +2212,7 @@ void SendData(unsigned int Name)    // 16ºñÆ® ¹è¿­·Î Àü¼ÛµÊ name º° ¸Þ½ÃÁö Àü¼ÛÀ
 		FireTestCheck.s_EXTPWR = 0;
 		FireTestCheck.s_EBSQUIB = 0;
 		FireTestCheck.s_BATSQUIB = 0;
-		FireTestCheck.s_ABARSQUIB = 0;
+		FireTestCheck.s_ABATSQUIB = 0;
 		FireTestCheck.s_BDUSQUIB = 0;
 		FireTestCheck.s_ARMING = 0;
 		FireTestCheck.s_INTARM = 0;
