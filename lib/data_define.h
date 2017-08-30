@@ -26,7 +26,7 @@ struct AD7980VALUE{
 struct SELFTESTTYPE{
 	unsigned char s_Result;
 	float s_Vref;
-    //float s_Dc3v;
+    float s_Dc3v;
 	float s_Dc5v;
 	float s_Dc12vPlus;
 	float s_Dc12vMinus;

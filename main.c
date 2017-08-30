@@ -106,7 +106,7 @@ unsigned int g_MenuPage;                // 메뉴 화면 페이지 값
 
 unsigned short   iinchip_source_port;   // 
 unsigned char     check_sendok_flag[8];
-const float g_Error[3] = { 0.05f,  0.4f, 1.5f};//const float g_Error[4] = { 0.05f, 0.2f, 0.4f, 1.5f};
+const float g_Error[4] = { 0.05f, 0.2f, 0.4f, 1.5f}; //g_Error[3] = { 0.05f,  0.4f, 1.5f};//const float 
 // <editor-fold defaultstate="collapsed" desc="구조체 모음">
 struct LOADER_STATUS{
 	long	terminalSpeed;
@@ -324,6 +324,7 @@ void __attribute__ ((interrupt, no_auto_psv)) _INT0Interrupt(void)
 }
 void __attribute__ ((interrupt, no_auto_psv)) _INT1Interrupt(void)
 {
+    
 	if(PORTEbits.RE0 == 0) g_InputValue += 1;
 	if(PORTEbits.RE1 == 0) g_InputValue = 2;
 	if(PORTEbits.RE2 == 0) g_InputValue = 3;
@@ -555,56 +556,57 @@ void InnerVoltTest(void)         // 내부 전원 점검 (완료 vref. 5v, +15v, -15v 정
 			g_AdcCount++;
 		}
 	}
-	if((SelfTest.s_Vref >= (4.096f-g_Error[0]))&&(SelfTest.s_Vref <= (4.096f+g_Error[0]))){
-		SET_BIT(SelfTest.s_Result,0);
-	}
-	else CLEAR_BIT(SelfTest.s_Result,0);
+//	if((SelfTest.s_Vref >= (4.096f-g_Error[0]))&&(SelfTest.s_Vref <= (4.096f+g_Error[0]))){
+//		SET_BIT(SelfTest.s_Result,0);
+//	}
+//	else CLEAR_BIT(SelfTest.s_Result,0);
+//
+//	if((SelfTest.s_Dc5v >= (5.0f-g_Error[1]))&&(SelfTest.s_Dc5v <= (5.0f+g_Error[1]))){
+//		SET_BIT(SelfTest.s_Result,1);
+//	}
+//	else CLEAR_BIT(SelfTest.s_Result,1);
+//
+//	if((SelfTest.s_Dc12vPlus >= (15.0f-g_Error[2]))&&(SelfTest.s_Dc12vPlus <= (15.f+g_Error[2]))){
+//		SET_BIT(SelfTest.s_Result,2);
+//	}
+//	else CLEAR_BIT(SelfTest.s_Result,2);
+//
+//	if((SelfTest.s_Dc12vMinus >= (-15.0f-g_Error[2]))&&(SelfTest.s_Dc12vMinus <= (-15.0f+g_Error[2]))){
+//		SET_BIT(SelfTest.s_Result,3);
+//	}
+//	else CLEAR_BIT(SelfTest.s_Result,3);
+    
+			if((SelfTest.s_Vref >= (4.096f-g_Error[0]))&&(SelfTest.s_Vref <= (4.096f+g_Error[0])))
+			{     // ((Vref 샘플값 >= (4.096f-에러율)) && (Vref 샘플값 <= (4.096f+에러율))
+				SET_BIT(SelfTest.s_Result,0);   // 정상이면 결과값의 0비트 1로 변경
+			}
+			else CLEAR_BIT(SelfTest.s_Result,0);    // 비정상이면 결과값의 0비트를 0으로 변경
+	
+			if((SelfTest.s_Dc3v >= (3.0f-g_Error[1]))&&(SelfTest.s_Dc3v <= (3.0f+g_Error[1])))
+			{
+				SET_BIT(SelfTest.s_Result,1);// 정상이면 결과값의 1비트 1로 변경
+			}
+	            else CLEAR_BIT(SelfTest.s_Result,1);// 비정상이면 결과값의 1비트를 0으로 변경
+	
+			if((SelfTest.s_Dc5v >= (5.0f-g_Error[2]))&&(SelfTest.s_Dc5v <= (5.0f+g_Error[2])))
+			{
+				SET_BIT(SelfTest.s_Result,2);// 정상이면 결과값의 2비트 1로 변경
+			}
+			else CLEAR_BIT(SelfTest.s_Result,2);// 비정상이면 결과값의 2비트를 0으로 변경
+	
+			if((SelfTest.s_Dc12vPlus >= (15.0f-g_Error[3]))&&(SelfTest.s_Dc12vPlus <= (15.f+g_Error[3])))
+			{
+				SET_BIT(SelfTest.s_Result,3);// 정상이면 결과값의 3비트 1로 변경
+			}
+			else CLEAR_BIT(SelfTest.s_Result,3);// 비정상이면 결과값의 3비트를 0으로 변경
+	
+			if((SelfTest.s_Dc12vMinus >= (-15.0f-g_Error[3]))&&(SelfTest.s_Dc12vMinus <= (-15.0f+g_Error[3])))
+			{
+				SET_BIT(SelfTest.s_Result,4);// 정상이면 결과값의 4비트 1로 변경
+			}
+			else CLEAR_BIT(SelfTest.s_Result,4);// 비정상이면 결과값의 4비트를 0으로 변경
 
-	if((SelfTest.s_Dc5v >= (5.0f-g_Error[1]))&&(SelfTest.s_Dc5v <= (5.0f+g_Error[1]))){
-		SET_BIT(SelfTest.s_Result,1);
-	}
-	else CLEAR_BIT(SelfTest.s_Result,1);
-
-	if((SelfTest.s_Dc12vPlus >= (15.0f-g_Error[2]))&&(SelfTest.s_Dc12vPlus <= (15.f+g_Error[2]))){
-		SET_BIT(SelfTest.s_Result,2);
-	}
-	else CLEAR_BIT(SelfTest.s_Result,2);
-
-	if((SelfTest.s_Dc12vMinus >= (-15.0f-g_Error[2]))&&(SelfTest.s_Dc12vMinus <= (-15.0f+g_Error[2]))){
-		SET_BIT(SelfTest.s_Result,3);
-	}
-	else CLEAR_BIT(SelfTest.s_Result,3);
-	//		if((SelfTest.s_Vref >= (4.096f-g_Error[0]))&&(SelfTest.s_Vref <= (4.096f+g_Error[0])))
-	//		{     // ((Vref 샘플값 >= (4.096f-에러율)) && (Vref 샘플값 <= (4.096f+에러율))
-	//			SET_BIT(SelfTest.s_Result,0);   // 정상이면 결과값의 0비트 1로 변경
-	//		}
-	//		else CLEAR_BIT(SelfTest.s_Result,0);    // 비정상이면 결과값의 0비트를 0으로 변경
-	//
-	//		if((SelfTest.s_Dc3v >= (3.0f-g_Error[1]))&&(SelfTest.s_Dc3v <= (3.0f+g_Error[1])))
-	//		{
-	//			SET_BIT(SelfTest.s_Result,1);// 정상이면 결과값의 1비트 1로 변경
-	//		}
-	//            else CLEAR_BIT(SelfTest.s_Result,1);// 비정상이면 결과값의 1비트를 0으로 변경
-	//
-	//		if((SelfTest.s_Dc5v >= (5.0f-g_Error[2]))&&(SelfTest.s_Dc5v <= (5.0f+g_Error[2])))
-	//		{
-	//			SET_BIT(SelfTest.s_Result,2);// 정상이면 결과값의 2비트 1로 변경
-	//		}
-	//		else CLEAR_BIT(SelfTest.s_Result,2);// 비정상이면 결과값의 2비트를 0으로 변경
-	//
-	//		if((SelfTest.s_Dc12vPlus >= (15.0f-g_Error[3]))&&(SelfTest.s_Dc12vPlus <= (15.f+g_Error[3])))
-	//		{
-	//			SET_BIT(SelfTest.s_Result,3);// 정상이면 결과값의 3비트 1로 변경
-	//		}
-	//		else CLEAR_BIT(SelfTest.s_Result,3);// 비정상이면 결과값의 3비트를 0으로 변경
-	//
-	//		if((SelfTest.s_Dc12vMinus >= (-15.0f-g_Error[3]))&&(SelfTest.s_Dc12vMinus <= (-15.0f+g_Error[3])))
-	//		{
-	//			SET_BIT(SelfTest.s_Result,4);// 정상이면 결과값의 4비트 1로 변경
-	//		}
-	//		else CLEAR_BIT(SelfTest.s_Result,4);// 비정상이면 결과값의 4비트를 0으로 변경
-
-	if(SelfTest.s_Result == 0x0F) // 결과값 모두 정상이면 동작
+	if(SelfTest.s_Result == 0x1F) // 결과값 모두 정상이면 동작
 	{
 		printf("i MENU/ModeMenu.jpg,0,0\r");
 		PageValue.s_First[MODE_SEL] = 1;          // 모드 선택 화면 토글
