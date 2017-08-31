@@ -324,42 +324,58 @@ void __attribute__ ((interrupt, no_auto_psv)) _INT0Interrupt(void)
 }
 void __attribute__ ((interrupt, no_auto_psv)) _INT1Interrupt(void)
 {
-    
-	if(PORTEbits.RE0 == 0) g_InputValue += 1;
-	if(PORTEbits.RE1 == 0) g_InputValue = 2;
-	if(PORTEbits.RE2 == 0) g_InputValue = 3;
-	if((PORTEbits.RE3 == 0) && (g_InputValue >0))
-	{
-		ButtonValue.s_OkButton = 1;
-		//g_SwSum = g_InputValue;
-	}
-	ButtonValue.s_NextButton == 0 ? printf("R 80,240,104,264,255,255,255,1\r"):NULL;    // 세부 점검 결과 화면에서 숫자 버튼 못쓰도록
-	if((g_InputValue != 0) && (ButtonValue.s_NextButton == 0))
-	{
-		printf("f %d,80,240\r",g_InputValue);   // 키패드 입력하는부분
-	}
-
-	IFS1bits.INT1IF = 0;		// INT1 Interrupt Flag Clear;
-	IFS1bits.INT2IF = 0;		// INT2 Interrupt Flag Clear
+	if(KEYPAD_1) g_InputValue = 1;    
+    if(KEYPAD_2) g_InputValue = 2;    
+    if(KEYPAD_3) g_InputValue = 3;    
+    if(KEYPAD_MENU) 
+    if(KEYPAD_4) g_InputValue = 4;    
+    if(KEYPAD_5) g_InputValue = 5;    
+    if(KEYPAD_6) g_InputValue = 6;    
+    if(KEYPAD_BACK) 
+    if(KEYPAD_7) g_InputValue = 7;    
+//	if(PORTEbits.RE0 == 0) g_InputValue += 1;
+//	if(PORTEbits.RE1 == 0) g_InputValue = 2;
+//	if(PORTEbits.RE2 == 0) g_InputValue = 3;
+//	if((PORTEbits.RE3 == 0) && (g_InputValue >0))
+//	{
+//		ButtonValue.s_OkButton = 1;
+//		//g_SwSum = g_InputValue;
+//	}
+//	ButtonValue.s_NextButton == 0 ? printf("R 80,240,104,264,255,255,255,1\r"):NULL;    // 세부 점검 결과 화면에서 숫자 버튼 못쓰도록
+//	if((g_InputValue != 0) && (ButtonValue.s_NextButton == 0))
+//	{
+//		printf("f %d,80,240\r",g_InputValue);   // 키패드 입력하는부분
+//	}
+//
+//	IFS1bits.INT1IF = 0;		// INT1 Interrupt Flag Clear;
+//	IFS1bits.INT2IF = 0;		// INT2 Interrupt Flag Clear
 }
 void __attribute__ ((interrupt, no_auto_psv)) _INT2Interrupt(void)
 {
-
-	if(PORTEbits.RE4 == 0)
-	{
-		ButtonValue.s_BackButton = (PORTEbits.RE4 == 0) ? 1 : 0;
-		g_InputValue = 0;
-		//printf("R 200,200,200,264,255,255,255,1\r");
-		printf("f int플래그 %d,999,999\r", ButtonValue.s_BackButton);
-		printf("f int포트 %d,999,999\r", PORTEbits.RE4);
-	}
-	if((PORTEbits.RE5 == 0) && (g_InputValue >0))
-	{
-		ButtonValue.s_NextButton = 1;
-		//g_SwSum = g_InputValue;
-	}
-	IFS1bits.INT1IF = 0;		// INT1 Interrupt Flag Clear;
-	IFS1bits.INT2IF = 0;		// INT2 Interrupt Flag Clear
+if(KEYPAD_1) g_InputValue = 1;    
+    if(KEYPAD_2) g_InputValue = 2;    
+    if(KEYPAD_3) g_InputValue = 3;    
+    if(KEYPAD_MENU) 
+    if(KEYPAD_4) g_InputValue = 4;    
+    if(KEYPAD_5) g_InputValue = 5;    
+    if(KEYPAD_6) g_InputValue = 6;    
+    if(KEYPAD_BACK) 
+    if(KEYPAD_7) g_InputValue = 7;    
+//	if(PORTEbits.RE4 == 0)
+//	{
+//		ButtonValue.s_BackButton = (PORTEbits.RE4 == 0) ? 1 : 0;
+//		g_InputValue = 0;
+//		//printf("R 200,200,200,264,255,255,255,1\r");
+//		printf("f int플래그 %d,999,999\r", ButtonValue.s_BackButton);
+//		printf("f int포트 %d,999,999\r", PORTEbits.RE4);
+//	}
+//	if((PORTEbits.RE5 == 0) && (g_InputValue >0))
+//	{
+//		ButtonValue.s_NextButton = 1;
+//		//g_SwSum = g_InputValue;
+//	}
+//	IFS1bits.INT1IF = 0;		// INT1 Interrupt Flag Clear;
+//	IFS1bits.INT2IF = 0;		// INT2 Interrupt Flag Clear
 }
 
 void ButtonPrintValue(void)      // 버튼입력값 화면 출력 SCI 연동
@@ -2754,6 +2770,7 @@ int main(void)
 	InitValue();           // 변수 초기화
 	InitUart1();           // uart 초기화
 	InitSpi1();            // spi 초기화
+    InitSpi2();             // spi 초기화
 	InitAdc();
 	InitRelay();            // 릴레이 포트 초기화
 	InitTimer1();
