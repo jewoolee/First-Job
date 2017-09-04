@@ -324,15 +324,39 @@ void __attribute__ ((interrupt, no_auto_psv)) _INT0Interrupt(void)
 }
 void __attribute__ ((interrupt, no_auto_psv)) _INT1Interrupt(void)
 {
-	if(KEYPAD_1) g_InputValue = 1;    
+	if(KEYPAD_1)
+    {
+        g_InputValue = 1;    
+    }
     if(KEYPAD_2) g_InputValue = 2;    
     if(KEYPAD_3) g_InputValue = 3;    
-    if(KEYPAD_MENU) 
+    if(KEYPAD_MENU) // 모드선택 화면으로 초기화
     if(KEYPAD_4) g_InputValue = 4;    
     if(KEYPAD_5) g_InputValue = 5;    
     if(KEYPAD_6) g_InputValue = 6;    
-    if(KEYPAD_BACK) 
+    if(KEYPAD_BACK) // 이전 버튼 선택
+    {
+        ButtonValue.s_BackButton = (KEYPAD_BACK) ? 1 : 0;
+		g_InputValue = 0;
+		printf("f int플래그 %d,999,999\r", ButtonValue.s_BackButton);
+		printf("f int포트 %d,999,999\r", PORTAbits.RA3);
+    }
     if(KEYPAD_7) g_InputValue = 7;    
+
+   	ButtonValue.s_NextButton == 0 ? printf("R 80,240,104,264,255,255,255,1\r"):NULL;    // 세부 점검 결과 화면에서 숫자 버튼 못쓰도록
+	if((g_InputValue != 0) && (ButtonValue.s_NextButton == 0))
+	{
+        int num;
+        num  = strcspn(g_InputValue,"0123456789");
+        printf("i STRING/%d.jpg,80,240\r",num);
+		//printf("f %d,80,240\r",g_InputValue);   // 키패드 입력하는부분
+	}
+
+	IFS1bits.INT1IF = 0;		// INT1 Interrupt Flag Clear;
+	IFS1bits.INT2IF = 0;		// INT2 Interrupt Flag Clear
+    
+    
+    
 //	if(PORTEbits.RE0 == 0) g_InputValue += 1;
 //	if(PORTEbits.RE1 == 0) g_InputValue = 2;
 //	if(PORTEbits.RE2 == 0) g_InputValue = 3;
@@ -352,15 +376,31 @@ void __attribute__ ((interrupt, no_auto_psv)) _INT1Interrupt(void)
 }
 void __attribute__ ((interrupt, no_auto_psv)) _INT2Interrupt(void)
 {
-if(KEYPAD_1) g_InputValue = 1;    
-    if(KEYPAD_2) g_InputValue = 2;    
-    if(KEYPAD_3) g_InputValue = 3;    
-    if(KEYPAD_MENU) 
-    if(KEYPAD_4) g_InputValue = 4;    
-    if(KEYPAD_5) g_InputValue = 5;    
-    if(KEYPAD_6) g_InputValue = 6;    
-    if(KEYPAD_BACK) 
-    if(KEYPAD_7) g_InputValue = 7;    
+if(KEYPAD_8) g_InputValue = 8;    
+    if(KEYPAD_9) g_InputValue = 9;    
+    if(KEYPAD_S_BACK) 
+    {
+        
+    }
+    if(KEYPAD_0) g_InputValue = 0;    
+    if(KEYPAD_OK) 
+    {
+        ButtonValue.s_OkButton = 1;
+    }
+    if(KEYPAD_S_NEXT) 
+    {
+        	ButtonValue.s_NextButton = 1;
+    }
+
+    if((g_InputValue != 0) && (ButtonValue.s_NextButton == 0))
+	{
+        int num;
+        num  = strcspn(g_InputValue,"0123456789");
+        printf("i STRING/%d.jpg,80,240\r",num);
+		//printf("f %d,80,240\r",g_InputValue);   // 키패드 입력하는부분
+	}
+    IFS1bits.INT1IF = 0;		// INT1 Interrupt Flag Clear;
+    IFS1bits.INT2IF = 0;		// INT2 Interrupt Flag Clear
 //	if(PORTEbits.RE4 == 0)
 //	{
 //		ButtonValue.s_BackButton = (PORTEbits.RE4 == 0) ? 1 : 0;
@@ -572,25 +612,6 @@ void InnerVoltTest(void)         // 내부 전원 점검 (완료 vref. 5v, +15v, -15v 정
 			g_AdcCount++;
 		}
 	}
-//	if((SelfTest.s_Vref >= (4.096f-g_Error[0]))&&(SelfTest.s_Vref <= (4.096f+g_Error[0]))){
-//		SET_BIT(SelfTest.s_Result,0);
-//	}
-//	else CLEAR_BIT(SelfTest.s_Result,0);
-//
-//	if((SelfTest.s_Dc5v >= (5.0f-g_Error[1]))&&(SelfTest.s_Dc5v <= (5.0f+g_Error[1]))){
-//		SET_BIT(SelfTest.s_Result,1);
-//	}
-//	else CLEAR_BIT(SelfTest.s_Result,1);
-//
-//	if((SelfTest.s_Dc12vPlus >= (15.0f-g_Error[2]))&&(SelfTest.s_Dc12vPlus <= (15.f+g_Error[2]))){
-//		SET_BIT(SelfTest.s_Result,2);
-//	}
-//	else CLEAR_BIT(SelfTest.s_Result,2);
-//
-//	if((SelfTest.s_Dc12vMinus >= (-15.0f-g_Error[2]))&&(SelfTest.s_Dc12vMinus <= (-15.0f+g_Error[2]))){
-//		SET_BIT(SelfTest.s_Result,3);
-//	}
-//	else CLEAR_BIT(SelfTest.s_Result,3);
     
 			if((SelfTest.s_Vref >= (4.096f-g_Error[0]))&&(SelfTest.s_Vref <= (4.096f+g_Error[0])))
 			{     // ((Vref 샘플값 >= (4.096f-에러율)) && (Vref 샘플값 <= (4.096f+에러율))
@@ -723,30 +744,51 @@ void TestResultCheck(unsigned int Label)    // 자체, 점화, 도통 점검 ●, ▷ 체크
 }
 void RelayControl() // 타이머 카운터로 인해 600ms 마다 반복동작함.
 {
-	unsigned int Count = 0;
+    unsigned int Count = 0;
 	unsigned int Add = 0;
 	InitRelay();
 	Count = g_RelayChannel%8;
 	Add = g_RelayChannel/8;
 
 	PORTD = IOPortSelectParam[Count]; // DO0 ~ DO7 반복
-	PORTG = ChipSelectParam[SEL_DATA];//PORTG = 0x0044; // CS4, CS3, CS2 DATA 선택
-	PORTG = ChipSelectParam[SEL_ADC];// PORTG = 0x0004; // CS3, CS2     DATA 초기화
+	PORTG = INIT_CS + CS2;  //  DATA 선택
+	PORTG = INIT_CS;        //  DATA 초기화
 
 	PORTD = RelaySelectParam[Add];//PORTD = 0x0008;// A3 - H -> 릴레이 1번 제어
-	PORTG = ChipSelectParam[SEL_ADDRESS];//PORTG = 0x0006;// CS3, CS2, CS1    ADDRESS 선택
-	PORTG = ChipSelectParam[SEL_ADC];// PORTG = 0x0004; // CS3, CS2         ADDRESS 초기화
+	PORTG = INIT_CS + CS3;  //  ADD  선택
+	PORTG = INIT_CS;        //  ADD 초기화
 
 	PORTD = RelaySelectParam[CLEAR];//PORTD = 0x000f; //A0 - H, A1 - H, A2 - H, A3 - H  -> 릴레이 동작 해제
-	PORTG = ChipSelectParam[SEL_ADDRESS];//PORTG = 0x0006; // CS3, CS2, CS1    ADDRESS 선택
-	PORTG = ChipSelectParam[SEL_ADC];//PORTG = 0x0004; // CS3, CS2         ADDRESS 초기화
+	PORTG = INIT_CS + CS3;  // ADD 선택
+	PORTG = INIT_CS;        // ADD 초기화
 	ReadADCValue(50);
 	g_RelayChannel++;
+//	unsigned int Count = 0;
+//	unsigned int Add = 0;
+//	InitRelay();
+//	Count = g_RelayChannel%8;
+//	Add = g_RelayChannel/8;
+//
+//	PORTD = IOPortSelectParam[Count]; // DO0 ~ DO7 반복
+//	PORTG = ChipSelectParam[SEL_DATA];//PORTG = 0x0044; // CS4, CS3, CS2 DATA 선택
+//	PORTG = ChipSelectParam[SEL_ADC];// PORTG = 0x0004; // CS3, CS2     DATA 초기화
+//
+//	PORTD = RelaySelectParam[Add];//PORTD = 0x0008;// A3 - H -> 릴레이 1번 제어
+//	PORTG = ChipSelectParam[SEL_ADDRESS];//PORTG = 0x0006;// CS3, CS2, CS1    ADDRESS 선택
+//	PORTG = ChipSelectParam[SEL_ADC];// PORTG = 0x0004; // CS3, CS2         ADDRESS 초기화
+//
+//	PORTD = RelaySelectParam[CLEAR];//PORTD = 0x000f; //A0 - H, A1 - H, A2 - H, A3 - H  -> 릴레이 동작 해제
+//	PORTG = ChipSelectParam[SEL_ADDRESS];//PORTG = 0x0006; // CS3, CS2, CS1    ADDRESS 선택
+//	PORTG = ChipSelectParam[SEL_ADC];//PORTG = 0x0004; // CS3, CS2         ADDRESS 초기화
+//	ReadADCValue(50);
+//	g_RelayChannel++;
 }
 void InitRelay(void)    // 릴레이 레지스터 초기화
 {
 	PORTD = 0x0000;                 // DO 0~7번 사용 안할경우 0으로 초기화
-	PORTG = ChipSelectParam[SEL_ADC];
+	PORTG = INIT_CS;
+//    PORTD = 0x0000;                 // DO 0~7번 사용 안할경우 0으로 초기화
+//	PORTG = ChipSelectParam[SEL_ADC];
 }
 void AlramPrint()       // 자체점검가능, 전원정상, LAN연결 상태알람메시지 출력
 {
@@ -757,14 +799,27 @@ void AlramPrint()       // 자체점검가능, 전원정상, LAN연결 상태알람메시지 출력
 void RelayLedControl(unsigned char Ch, unsigned char On_Off)    // 잔류전압 릴레이, 절연점압 릴레이 제어
 {
     unsigned int RelayLedStatus=0;    // ADC 츠
+    unsigned char a;
+    if(Ch == 0) a = 6;
+    else if(Ch == 1) a=7;
 	// RESIDUAL_RELAY - 릴레이 0번 사용 , INSUL_RELAY - 릴레이 1번 사용
 	if(On_Off == ON)
-		SET_BIT(RelayLedStatus, Ch);    // ON 이면 CH번째 1로 변경
+		SET_BIT(RelayLedStatus, a);    // ON 이면 CH번째 1로 변경
 	else
-		CLEAR_BIT(RelayLedStatus, Ch);  // OFF면 CH번째 0으로 변경
-	PORTD = RelayLedStatus;             // 0001 OR 0002
-	PORTG = ChipSelectParam[SEL_LEDADC];   //  ADC(CS2) + LED(CS0)
-	PORTG = ChipSelectParam[SEL_ADC];   // ADC(CS2)
+		CLEAR_BIT(RelayLedStatus, a);  // OFF면 CH번째 0으로 변경
+
+	PORTE = RelayLedStatus;             // 0001 OR 0002
+	PORTG = INIT_CS;   //  ADC(CS2) + LED(CS0)
+	PORTG = CE_CNV;   // ADC(CS2)
+//     unsigned int RelayLedStatus=0;    // ADC 츠
+//	// RESIDUAL_RELAY - 릴레이 0번 사용 , INSUL_RELAY - 릴레이 1번 사용
+//	if(On_Off == ON)
+//		SET_BIT(RelayLedStatus, Ch);    // ON 이면 CH번째 1로 변경
+//	else
+//		CLEAR_BIT(RelayLedStatus, Ch);  // OFF면 CH번째 0으로 변경
+//	PORTD = RelayLedStatus;             // 0001 OR 0002
+//	PORTG = ChipSelectParam[SEL_LEDADC];   //  ADC(CS2) + LED(CS0)
+//	PORTG = ChipSelectParam[SEL_ADC];   // ADC(CS2)
 }
 
 // <editor-fold defaultstate="collapsed" desc="잔류전압점검">
@@ -775,8 +830,10 @@ void ResidualVoltTest(void)     // 잔류 전압 점검(완료  ADC값 검증 필요)FORI0번 
 
 	IEC1bits.INT1IE = 0;	// 인터럽트 1중지
 	IEC1bits.INT2IE = 0;    // 인터럽트 2중지
-	RelayLedControl(RESIDUAL_RELAY,ON); // ON = 1 릴레이 0번
-	RelayLedControl(INSUL_RELAY,OFF);   // OFF = 0 릴레이 1번
+    Relay0 = 1;     //  잔류 전압 점검 릴레이 동작
+	Relay1 = 0;     // 절연 점검 릴레이 해제
+//	RelayLedControl(RESIDUAL_RELAY,ON); // ON = 1 릴레이 0번
+//	RelayLedControl(INSUL_RELAY,OFF);   // OFF = 0 릴레이 1번
 	// 릴레이로 채널선택후 ADC로 값을 읽고 채널별 값을 저장해서 정상 범위값과 비교
 	memset(&EctsStatus.ResidualVoltTestResult[0],0,sizeof(EctsStatus.ResidualVoltTestResult[0])*20); // 20개 채널 0으로 초기화
 	EctsStatus.ResidualVoltTestTotalResult = 0;     // 잔류 전압 점검 전체 결과 초기화
@@ -891,8 +948,11 @@ void InsulationTest(void)       // 절연 점검(완료 ADC값 검증 필요)FORI0번 건너 �
 	InitRelay();    // 릴레이 초기화
 	IEC1bits.INT1IE = 0;
 	IEC1bits.INT2IE = 0;
-	RelayLedControl(RESIDUAL_RELAY,OFF); // OFF = 0 릴레이 0번
-	RelayLedControl(INSUL_RELAY,ON);   // ON = 1 릴레이 1번
+	
+    Relay0 = 0;     //  잔류 전압 점검 릴레이 해제
+	Relay1 = 1;     // 절연 점검 릴레이 동작
+//    (RESIDUAL_RELAY,OFF); // OFF = 0 릴레이 0번
+//	RelayLedControl(INSUL_RELAY,ON);   // ON = 1 릴레이 1번
 
 	memset(&EctsStatus.InsulTestResult[0],0,sizeof(EctsStatus.InsulTestResult[0])*20); // 20개 채널 0으로 초기화
 	EctsStatus.InsulTestTotalResult = 0;    // 절연 점검 전체 결과 초기화
@@ -1007,8 +1067,11 @@ void ShortTest(void)            // 도통단선점검(완료 ADC값 검증 필요)FORI0번 건�
 	InitRelay();    // 릴레이 초기화
 	IEC1bits.INT1IE = 0;
 	IEC1bits.INT2IE = 0;
-	RelayLedControl(RESIDUAL_RELAY,OFF); // OFF = 0 릴레이 0번
-	RelayLedControl(INSUL_RELAY,OFF);   // OFF = 0 릴레이 1번
+	Relay0 = 0;     //  잔류 전압 점검 릴레이 해제
+	Relay1 = 0;     // 절연 점검 릴레이 해제
+    
+//    (RESIDUAL_RELAY,OFF); // OFF = 0 릴레이 0번
+//	RelayLedControl(INSUL_RELAY,OFF);   // OFF = 0 릴레이 1번
 	memset(&EctsStatus.ShortTestResult[0],0,sizeof(EctsStatus.ShortTestResult[0])*20); // 20개 채널 0으로 초기화
 	EctsStatus.ShortTestTotalResult = 0 ;       // 도통/단선 점검 전체 결과 초기화
 	T1CONbits.TON = 1;  //타이머 인터럽트 동작
@@ -1115,14 +1178,25 @@ unsigned int ReadADC7980(void)      // ADC7980 SPI통신이용 측정값 반환
 	unsigned int data;
 	data = 0;
 
-	PORTG = ChipSelectParam[SEL_ADC]; // RG9 제어 및 LED 동작 RG0,1
-	SPI1BUF = 0x00;
-	while(SPI1STATbits.SPITBF);
-	while(!SPI1STATbits.SPIRBF);
-	data = SPI1BUF;
-	PORTG = ChipSelectParam[SEL_LED]; // RG9 제어 및 LED 동작 RG0,1
+	PORTG = CS0 + CS1; // RG9 제어 및 LED 동작 RG0,1
+	SPI2BUF = 0x00;
+	while(SPI2STATbits.SPITBF);
+	while(!SPI2STATbits.SPIRBF);
+	data = SPI2BUF;
+	PORTG = INIT_CS; // RG9 제어 및 LED 동작 RG0,1
 
 	return data;
+//    unsigned int data;
+//	data = 0;
+//
+//	PORTG = ChipSelectParam[SEL_ADC]; // RG9 제어 및 LED 동작 RG0,1
+//	SPI1BUF = 0x00;
+//	while(SPI1STATbits.SPITBF);
+//	while(!SPI1STATbits.SPIRBF);
+//	data = SPI1BUF;
+//	PORTG = ChipSelectParam[SEL_LED]; // RG9 제어 및 LED 동작 RG0,1
+//
+//	return data;
 }
 void ReadADCValue(unsigned int AverageCount)    // ADC 측정값 구하기
 {
