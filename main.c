@@ -6,7 +6,6 @@
 */
 
 #include <p33FJ128GP310A.h>
-#include "lib/w5300.h"
 #include <libpic30.h>
 #include <string.h>
 #include <math.h>
@@ -14,13 +13,18 @@
 #include <uart.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "lib\init_drv.h"
-#include "lib\data_define.h"
+#include "lib/init_drv.h"
+#include "lib/data_define.h"
+#include "lib/socket.h"
 
 //Configuration Bits 설정
 //_FOSC(ECIO_PLL4);//_FOSC(ECIO_PLL8);
 //_FWDT(WDT_OFF);
 //_FBORPOR(MCLR_EN && PWRT_OFF);
+void InitXHyper255A(void);       // Intialize MCU
+void     loopback_udp(SOCKET s, uint16 port, uint8* buf, uint16 mode);
+void W5300_Setting();
+void     loopback_udp(SOCKET s, uint16 port, uint8* buf, uint16 mode);
 
 void ButtonPrintValue(void);
 void InitValue(void);
@@ -41,15 +45,10 @@ void InsulationTestResultDebug(void);
 unsigned int ReadADC7980(void);
 void ReadADCValue(unsigned int AverageCount);
 void AlramPrint();
-void UdpSetting();
 void SendData(unsigned int Name);
 void RecvDataParsing(unsigned int Name);
 void RecvDataSort(unsigned int Name, unsigned int Num);
-unsigned char socket(  unsigned char protocol, unsigned short port, unsigned short mode);
-void close();
-unsigned long sendto(unsigned char* buf, unsigned long len, unsigned char* addr, unsigned short port);
-unsigned long recvfrom(unsigned char* buf, unsigned long len, unsigned char* addr, unsigned short *port);
-void loopback_udp(unsigned short port, unsigned short mode);
+
 // 인터럽트 선언 부************************************************
 void __attribute__((interrupt, auto_psv)) _U1RXInterrupt(void);
 void __attribute__((interrupt, auto_psv)) _T1Interrupt(void);
@@ -104,8 +103,6 @@ unsigned int g_TotalSel = 0 ;           // 발사 계통점검-통합점검에 대한 순서값
 //int g_SwSum =0;
 unsigned int g_MenuPage;                // 메뉴 화면 페이지 값
 
-unsigned short   iinchip_source_port;   // 
-unsigned char     check_sendok_flag[8];
 const float g_Error[4] = { 0.05f, 0.2f, 0.4f, 1.5f}; //g_Error[3] = { 0.05f,  0.4f, 1.5f};//const float 
 // <editor-fold defaultstate="collapsed" desc="구조체 모음">
 struct LOADER_STATUS{
@@ -308,7 +305,7 @@ void __attribute__((interrupt, auto_psv)) _T2Interrupt(void)
 }
 void __attribute__ ((interrupt, no_auto_psv)) _INT0Interrupt(void)
 {
-	loopback_udp(3000,0); // 메시지 전송 및 수신 동작이라 가정하고
+//loopback_udp(3000,0); // 메시지 전송 및 수신 동작이라 가정하고
 	if(PageValue.s_Fire[FIRE_TEST_TOTAL_1]==1)
 	{
 		if(g_TotalSel == 10) g_TotalSel = 0;
@@ -347,7 +344,7 @@ void __attribute__ ((interrupt, no_auto_psv)) _INT1Interrupt(void)
 	if((g_InputValue != 0) && (ButtonValue.s_NextButton == 0))
 	{
         int num;
-        num  = strcspn(g_InputValue,"0123456789");
+     //   num  = strcspn(g_InputValue,"0123456789");
         printf("i STRING/%d.jpg,80,240\r",num);
 		//printf("f %d,80,240\r",g_InputValue);   // 키패드 입력하는부분
 	}
@@ -395,7 +392,7 @@ if(KEYPAD_8) g_InputValue = 8;
     if((g_InputValue != 0) && (ButtonValue.s_NextButton == 0))
 	{
         int num;
-        num  = strcspn(g_InputValue,"0123456789");
+       // num  = strcspn(g_InputValue,"0123456789");
         printf("i STRING/%d.jpg,80,240\r",num);
 		//printf("f %d,80,240\r",g_InputValue);   // 키패드 입력하는부분
 	}
@@ -2609,235 +2606,113 @@ void RecvDataSort(unsigned int Name, unsigned int Num)
 	}
 }
 
-// <editor-fold defaultstate="collapsed" desc="WIZ830MJ UDP">
-
-unsigned char socket(unsigned char protocol, unsigned short port, unsigned short mode)
+void InitXHyper255A(void)
 {
-	IINCHIP_WRITE(Sn_MR(7),( unsigned short)(protocol | mode)); // set Sn_MR with protocol & flag 0x0000 0000 0800 03C0, 0x02--1
-	if (port != 0) IINCHIP_WRITE(Sn_PORTR(7),port); // 0x0000 0000 0800 03CA, 3000--2
-	else
-	{
-		iinchip_source_port++;     // if don't set the source port, set local_port number.
-		IINCHIP_WRITE(Sn_PORTR(7),iinchip_source_port);  
-	}
-	setSn_CR(7, Sn_CR_OPEN);      // open s-th SOCKET--3
-
-	check_sendok_flag[7] = 1;     // initialize the sendok flag.
-
-#ifdef __DEF_IINCHIP_DBG__
-	printf("%d : Sn_MR=0x%04x,Sn_PORTR=0x%04x(%d),Sn_SSR=%04x\r\n",s,IINCHIP_READ(Sn_MR(s)),IINCHIP_READ(Sn_PORTR(s)),IINCHIP_READ(Sn_PORTR(s)),getSn_SSR(s));
-#endif
-	return 1;
+//   ADDR32(GPIO_BASE+GPDR2) |= GPDR2_VALUE; //~0x0;//((ADDR32(GPIO_BASE+GPDR2) & 0x0001FFFF) | GPDR2_VALUE);
+//   ADDR32(GPIO_BASE+GAFR2_L) |= GAFR2L_VALUE;
+//   ADDR32(MEM_CTL_BASE+MSC1) = 0x00008259;//0x000095F8;
 }
-
-void close()
+void     loopback_udp(SOCKET s, uint16 port, uint8* buf, uint16 mode)
 {
-	// M_08082008 : It is fixed the problem that Sn_SSR cannot be changed a undefined value to the defined value.
-	//              Refer to Errata of W5300
-	//Check if the transmit data is remained or not.
-	if( ((getSn_MR(7)& 0x0F) == Sn_MR_TCP) && (getSn_TX_FSR(7) != getIINCHIP_TxMAX(7)) )
-	{
-		unsigned short loop_cnt =0;
-		while(getSn_TX_FSR(7) != getIINCHIP_TxMAX(7))
-		{
-			if(loop_cnt++ > 10)
-			{
-				unsigned char  destip[4];
-				// M_11252008 : modify dest ip address
-				//getSIPR(destip);
-				destip[0] = 0;destip[1] = 0;destip[2] = 0;destip[3] = 1;
-				socket(Sn_MR_UDP,0x3000,0);//0x02
-				sendto(( unsigned char *)"x",1,destip,0x3000); // send the dummy data to an unknown destination(0.0.0.1).
-				break; // M_11252008 : added break statement
-			}
-			wait_10ms(10);
-		}
-	};
-	////////////////////////////////
-	setSn_IR(7 ,0x00FF);          // Clear the remained interrupt bits.
-	setSn_CR(7 ,Sn_CR_CLOSE);     // Close s-th SOCKET
+   uint32 len;
+   uint8 destip[4];
+   uint16 destport;
+   
+   switch(getSn_SSR(s))
+   {
+                                                         // -------------------------------
+      case SOCK_UDP:                                     // 
+         if((len=getSn_RX_RSR(s)) > 0)                   // check the size of received data
+         {
+            len = recvfrom(s,buf,len,destip,&destport);  // receive data from a destination
+            if(len !=sendto(s,buf,len,destip,destport))  // send the data to the destination
+            {
+               printf("%d : Sendto Fail.len=%d,",s,len);
+               printf("%d.%d.%d.%d(%d)\r\n",destip[0],destip[1],destip[2],destip[3],destport);
+            }
+         }
+         break;
+                                                         // -----------------
+      case SOCK_CLOSED:                                  // CLOSED
+         close(s);                                       // close the SOCKET
+         socket(s,Sn_MR_UDP,port,mode);                  // open the SOCKET with UDP mode
+         break;
+      default:
+         break;
+   }
 }
-
-unsigned long sendto(unsigned char * buf, unsigned long len, unsigned char* addr, unsigned short port)
+void W5300_Setting()
 {
-	unsigned char  status=0;
-	unsigned char  isr=0;
-	unsigned long ret=0;
+   uint8 tx_mem_conf[8] = {8,8,8,8,8,8,8,8};          // for setting TMSR regsiter
+   uint8 rx_mem_conf[8] = {8,8,8,8,8,8,8,8};          // for setting RMSR regsiter
+   
+   uint8 * data_buf = (uint8 *) 0xA10E0000;         // buffer for loopack data
+   
+   uint8 ip[4] = {192,168,111,200};                   // for setting SIP register
+   uint8 gw[4] = {192,168,111,1};                     // for setting GAR register
+   uint8 sn[4] = {255,255,255,0};                     // for setting SUBR register
+   uint8 mac[6] = {0x00,0x08,0xDC,0x00,111,200};      // for setting SHAR register
+   
+   uint8 serverip[4] = {192,168,111,78};              // "TCP SERVER" IP address for loopback_tcpc()
+   
+   
+   data_buf = (uint8*)0xA10F0000;                       
+   
+   InitXHyper255A();                                  // initiate MCU
+   
+   /* initiate W5300 */
+   iinchip_init();  
 
-#ifdef __DEF_IINCHIP_DBG__
-	printf("%d : sendto():%d.%d.%d.%d(%d), len=%d\r\n",s, addr[0], addr[1], addr[2], addr[3] , port, len);
-#endif
+   /* allocate internal TX/RX Memory of W5300 */
+   if(!sysinit(tx_mem_conf,rx_mem_conf))           
+   {
+      printf("MEMORY CONFIG ERR.\r\n");
+      while(1);
+   }
 
-	if
-		(
-		((addr[0] == 0x00) && (addr[1] == 0x00) && (addr[2] == 0x00) && (addr[3] == 0x00)) ||
-		((port == 0x00)) ||(len == 0)
-		)
-	{
-#ifdef __DEF_IINCHIP_DBG__
-		printf("%d : Fail[%d.%d.%d.%d, %.d, %d]\r\n",s, addr[0], addr[1], addr[2], addr[3] , port, len);
-#endif
-		return 0;
-	}
+   //setMR(getMR()|MR_FS);                            // If Little-endian, set MR_FS.
+   
+   setSHAR(mac);                                      // set source hardware address
+   
+   #ifdef __DEF_IINCHIP_PPP__
+      if(pppinit((uint8*)"test01", 6, (uint8*)"pppoe1000", 9)!=1)
+      {
+         printf("PPPoE fail.\r\n");
+         while(1);
+      }
+      close(0);
+   #else
+      /* configure network information */
+      setGAR(gw);                                     // set gateway IP address
+      setSUBR(sn);                                    // set subnet mask address
+      setSIPR(ip);                                    // set source IP address
+   #endif
+   
+   /* verify network information */
+   getSHAR(mac);                                      // get source hardware address 
+   getGAR(gw);                                        // get gateway IP address      
+   getSUBR(sn);                                       // get subnet mask address     
+   getSIPR(ip);                                       // get source IP address       
+   
+   printf("SHAR : %02x:%02x:%02x:%02x:%02x:%02x\r\n",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+   printf("GWR  : %d.%d.%d.%d\r\n",gw[0],gw[1],gw[2],gw[3]);
+   printf("SUBR : %d.%d.%d.%d\r\n",sn[0],sn[1],sn[2],sn[3]);
+   printf("SIPR : %d.%d.%d.%d\r\n",ip[0],ip[1],ip[2],ip[3]);
+    while(1)
+   {
+      loopback_udp(7,3000,data_buf,0);
+   }
 
+   #ifdef __DEF_IINCHIP_PPP__
+   {
+      uint8 ppp_mac[6];
+      getPDHAR(ppp_mac);
+      pppterm(ppp_mac, getPSIDR());
+   }
+   #endif
 
-	if (len > getIINCHIP_TxMAX(7)) ret = getIINCHIP_TxMAX(7); // check size not to exceed MAX size.
-	else ret = len;
-
-	// set destination IP address
-	IINCHIP_WRITE(Sn_DIPR(7),((( unsigned short)addr[0])<<8) + ( unsigned short) addr[1]);
-	IINCHIP_WRITE(Sn_DIPR2(7),((( unsigned short)addr[2])<<8) + ( unsigned short) addr[3]);
-	// set destination port number
-	IINCHIP_WRITE(Sn_DPORTR(7),port);
-
-	wiz_write_buf(7, buf, ret);                              // copy data
-	// send
-	setSn_TX_WRSR(7,ret);
-	clearSUBR();
-	setSn_CR(7, Sn_CR_SEND);
-
-	while (!((isr = getSn_IR(7)) & Sn_IR_SENDOK))            // wait SEND command completion
-	{
-		status = getSn_SSR(7);                                // warning ---------------------------------------
-		if ((status == SOCK_CLOSED) || (isr & Sn_IR_TIMEOUT)) // Sn_IR_TIMEOUT causes the decrement of Sn_TX_FSR
-		{                                                     // -----------------------------------------------
-#ifdef __DEF_IINCHIP_DBG__
-			printf("%d: send fail.status=0x%02x,isr=%02x\r\n",status,isr);
-#endif
-			setSn_IR(7,Sn_IR_TIMEOUT);
-			return 0;
-		}
-	}
-	applySUBR();
-	setSn_IR(7, Sn_IR_SENDOK); // Clear Sn_IR_SENDOK
-
-
-#ifdef __DEF_IINCHIP_DBG__
-	printf("%d : send()end\r\n",s);
-#endif
-
-	return ret;
+   while(1);
 }
-
-unsigned long recvfrom(unsigned char * buf, unsigned long len, unsigned char* addr, unsigned short*port)
-{
-	unsigned short head[4];
-	unsigned long data_len=0;
-
-
-#ifdef __DEF_IINCHIP_DBG__
-	printf("recvfrom()\r\n");
-#endif
-
-	if ( len > 0 )
-	{
-		switch (IINCHIP_READ(Sn_MR(7)) & 0x07)       // check the mode of s-th SOCKET
-		{                                            // -----------------------------
-		case Sn_MR_UDP :                          // UDP mode
-			wiz_read_buf(7, ( unsigned char *)head, 8);      // extract the PACKET-INFO
-			// read peer's IP address, port number.
-			if(*(( volatile unsigned short*)MR) & MR_FS)            // check FIFO swap bit
-			{
-				head[0] = ((((head[0] << 8 ) & 0xFF00)) | ((head[0] >> 8)& 0x00FF));
-				head[1] = ((((head[1] << 8 ) & 0xFF00)) | ((head[1] >> 8)& 0x00FF));
-				head[2] = ((((head[2] << 8 ) & 0xFF00)) | ((head[2] >> 8)& 0x00FF));
-				head[3] = ((((head[3] << 8 ) & 0xFF00)) | ((head[3] >> 8)& 0x00FF));
-			}
-			addr[0] = ( unsigned char )(head[0] >> 8);       // destination IP address
-			addr[1] = ( unsigned char )head[0];
-			addr[2] = ( unsigned char )(head[1]>>8);
-			addr[3] = ( unsigned char )head[1];
-			*port = head[2];                       // destination port number
-			data_len = (unsigned long)head[3];            // DATA packet length
-
-#ifdef __DEF_IINCHIP_DBG__
-			printf("UDP msg arrived:%d(0x%04x)\r\n",data_len,data_len);
-			printf("source Port : %d\r\n", *port);
-			printf("source IP : %d.%d.%d.%d\r\n", addr[0], addr[1], addr[2], addr[3]);
-#endif
-
-			wiz_read_buf(7, buf, data_len);        // data copy.
-			break;
-		default :
-			break;
-		}
-		setSn_CR(7,Sn_CR_RECV);                      // recv
-	}
-#ifdef __DEF_IINCHIP_DBG__
-	printf("recvfrom() end ..\r\n");
-#endif
-
-	return data_len;
-}
-
-void loopback_udp(  unsigned short port, unsigned short mode)
-{
-	unsigned long len;
-	unsigned char  destip[4];
-	unsigned short destport;
-
-	switch(getSn_SSR(7))
-	{
-	case SOCK_UDP:                                     //
-		if((len=getSn_RX_RSR(7)) > 0)                   // check the size of received data
-		{
-			len = recvfrom(&g_TempBuffer,len,destip,&destport);  // receive data from a destination
-			if(len !=sendto(&g_DataBuffer,len,destip,destport))  // send the data to the destination
-			{
-				printf("%d : Sendto Fail.len=%d,",7,len);
-				printf("%d.%d.%d.%d(%d)\r\n",destip[0],destip[1],destip[2],destip[3],destport);
-			}
-		}
-		break;
-		// -----------------
-	case SOCK_CLOSED:                                  // CLOSED
-		close();                                       // close the SOCKET
-		socket(Sn_MR_UDP,port,mode);                  // open the SOCKET with UDP mode
-		break;
-	default:
-		break;
-	}
-}
-
-void UdpSetting()
-{
-	unsigned char  tx_mem_conf[8] = {8,8,8,8,8,8,8,8};          // for setting TMSR regsiter
-	unsigned char  rx_mem_conf[8] = {8,8,8,8,8,8,8,8};          // for setting RMSR regsiter
-
-
-	unsigned char  ip[4] = {192,168,111,200};                   // for setting SIP register
-	unsigned char  gw[4] = {192,168,111,1};                     // for setting GAR register
-	unsigned char  sn[4] = {255,255,255,0};                     // for setting SUBR register
-	unsigned char  mac[6] = {0x00,0x08,0xDC,0x00,111,200};      // for setting SHAR register
-
-	unsigned char  serverip[4] = {192,168,111,78};              // "TCP SERVER" IP address for loopback_tcpc()
-
-	status.terminalSpeed = 0x08;
-	status.downloadSpeed = 0x08;
-	/* initiate W5300 */
-	iinchip_init();
-
-	/* allocate internal TX/RX Memory of W5300 */
-	if(!sysinit(tx_mem_conf,rx_mem_conf))
-	{
-		printf("MEMORY CONFIG ERR.\r\n");
-		while(1);
-	}
-
-	/* verify network information */
-	getSHAR(mac);                                      // get source hardware address
-	getGAR(gw);                                        // get gateway IP address
-	getSUBR(sn);                                       // get subnet mask address
-	getSIPR(ip);                                       // get source IP address
-
-	printf("SHAR : %02x:%02x:%02x:%02x:%02x:%02x\r\n",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
-	printf("GWR  : %d.%d.%d.%d\r\n",gw[0],gw[1],gw[2],gw[3]);
-	printf("SUBR : %d.%d.%d.%d\r\n",sn[0],sn[1],sn[2],sn[3]);
-	printf("SIPR : %d.%d.%d.%d\r\n",ip[0],ip[1],ip[2],ip[3]);
-}
-
-// </editor-fold>
-
 int main(void)
 {
 	InitGPIO();          // gpio 초기화
@@ -2851,7 +2726,7 @@ int main(void)
 	InitTimer2();
 	InnerVoltTest();      // 내부 전압 점검
 	InitInterrupt();       // 인터럽트 초기화
-	UdpSetting();           // udp 통신 설정
+    W5300_Setting();        // w5300 초기화
 	IFS1bits.INT1IF = 0;		// INT1 Interrupt Flag Clear
 	IFS1bits.INT2IF = 0;		// INT2 Interrupt Flag Clear
 	IFS0bits.T1IF = 0;			// T1 Interrupt Flag Clear

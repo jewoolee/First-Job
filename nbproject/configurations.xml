@@ -6,6 +6,9 @@
                    projectFiles="true">
       <itemPath>lib/data_define.h</itemPath>
       <itemPath>lib/init_drv.h</itemPath>
+      <itemPath>lib/iinchip_conf.h</itemPath>
+      <itemPath>lib/socket.h</itemPath>
+      <itemPath>lib/types.h</itemPath>
       <itemPath>lib/w5300.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
@@ -17,7 +20,8 @@
                    projectFiles="true">
       <itemPath>main.c</itemPath>
       <itemPath>init_drv.c</itemPath>
-      <itemPath>W5300_Drv_V1.2.6/w5300.c</itemPath>
+      <itemPath>socket.c</itemPath>
+      <itemPath>w5300.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
